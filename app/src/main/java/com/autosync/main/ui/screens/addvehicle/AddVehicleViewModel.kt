@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.dao.VehicleDao
 import com.autosync.main.data.local.model.Vehicle
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,7 +46,9 @@ class AddVehicleViewModel @Inject constructor(
                 year = year.value.toIntOrNull() ?: 0,
                 licensePlate = licensePlate.value
             )
-            vehicleDao.insertVehicle(vehicle)
+            withContext(Dispatchers.IO) {
+                vehicleDao.insertVehicle(vehicle)
+            }
         }
     }
 }
