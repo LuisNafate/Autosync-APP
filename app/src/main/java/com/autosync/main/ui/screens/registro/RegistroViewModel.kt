@@ -82,19 +82,18 @@ class RegistroViewModel : ViewModel() {
 
             try {
                 val result = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
+                _state.value = _state.value.copy(isRegistroSuccessful = true)
+                
                 val firebaseUser = result.user
                 if (firebaseUser != null) {
-                    userRepository.guardarUsuario(
-                        uid = firebaseUser.uid,
-                        nombre = _state.value.nombre,
-                        email = _state.value.email
-                    )
+                    viewModelScope.launch {
+                        userRepository.guardarUsuario(
+                            uid = firebaseUser.uid,
+                            nombre = _state.value.nombre,
+                            email = _state.value.email
+                        )
+                    }
                 }
-
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    isRegistroSuccessful = true
-                )
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isLoading = false,
