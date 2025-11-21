@@ -2,6 +2,7 @@ package com.autosync.main.ui.screens.registro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -32,6 +33,7 @@ class RegistroViewModel : ViewModel() {
     val state: StateFlow<RegistroState> = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
+    private val userRepository = UserRepository()
 
     fun onNombreChange(nombre: String) {
         _state.value = _state.value.copy(nombre = nombre, nombreError = null)
@@ -79,7 +81,16 @@ class RegistroViewModel : ViewModel() {
             }
 
             try {
-                auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
+                val result = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
+                val firebaseUser = result.user
+                if (firebaseUser != null) {
+                    userRepository.guardarUsuario(
+                        uid = firebaseUser.uid,
+                        nombre = _state.value.nombre,
+                        email = _state.value.email
+                    )
+                }
+
                 _state.value = _state.value.copy(
                     isLoading = false,
                     isRegistroSuccessful = true
