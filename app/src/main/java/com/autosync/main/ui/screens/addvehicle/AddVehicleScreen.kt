@@ -14,16 +14,23 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +49,9 @@ fun AddVehicleScreen(
     val modelo by viewModel.modelo.collectAsState()
     val year by viewModel.year.collectAsState()
     val licensePlate by viewModel.licensePlate.collectAsState()
+    val models by viewModel.models.collectAsState()
+
+    var isModelsDropdownExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -67,7 +77,30 @@ fun AddVehicleScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Modelo")
-            CustomTextField(modifier = Modifier.fillMaxWidth(), value = modelo, onValueChange = viewModel::onModeloChange, label = "", placeholder = "Corolla")
+            ExposedDropdownMenuBox(
+                expanded = isModelsDropdownExpanded,
+                onExpandedChange = { isModelsDropdownExpanded = it }
+            ) {
+                TextField(
+                    value = modelo,
+                    onValueChange = { viewModel.onModeloChange(it) },
+                    readOnly = models.isNotEmpty(),
+                    placeholder = { Text("Corolla") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModelsDropdownExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(expanded = isModelsDropdownExpanded, onDismissRequest = { isModelsDropdownExpanded = false }) {
+                    models.forEach {
+                        DropdownMenuItem(
+                            text = { Text(it) },
+                            onClick = {
+                                viewModel.onModeloChange(it)
+                                isModelsDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Año")
