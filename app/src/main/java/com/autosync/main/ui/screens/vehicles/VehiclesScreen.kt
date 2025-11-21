@@ -16,12 +16,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -109,8 +112,17 @@ fun VehicleListItem(vehicle: Vehicle) {
                 Text(vehicle.make, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
                 Text("${vehicle.year}", fontSize = 16.sp, color = Color.Gray)
                 Text("Placas: ${vehicle.licensePlate}", fontSize = 16.sp, color = Color.Gray)
-                TextButton(onClick = { /* TODO: Navigate to history */ }) {
-                    Text("Ver historial", color = Color(0xFF3B82F6))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { /* TODO: Navigate to history */ }) {
+                        Text("Ver historial", color = Color(0xFF3B82F6))
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(onClick = { /* TODO: Edit vehicle */ }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar vehículo", tint = Color.Gray)
+                    }
+                    IconButton(onClick = { /* TODO: Delete vehicle */ }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Borrar vehículo", tint = Color.Gray)
+                    }
                 }
             }
         }
