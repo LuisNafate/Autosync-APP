@@ -49,7 +49,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    onNavigateToAddVehicle: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -149,7 +150,7 @@ fun HomeScreen(
                 Text("No tienes vehículos registrados", color = Color.Gray)
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { /* TODO: Add vehicle action */ },
+                    onClick = onNavigateToAddVehicle,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10374A).copy(alpha = 0.5f))
                 ) {
