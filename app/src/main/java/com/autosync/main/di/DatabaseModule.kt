@@ -22,7 +22,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "autosync_database"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides

@@ -10,5 +10,6 @@ data class Vehicle(
     val make: String,
     val model: String,
     val year: Int,
-    val licensePlate: String
+    val licensePlate: String,
+    val imageUri: String? = null
 )

@@ -1,5 +1,6 @@
 package com.autosync.main.ui.screens.addvehicle
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.dao.VehicleDao
@@ -24,6 +25,7 @@ class AddVehicleViewModel @Inject constructor(
     val modelo = MutableStateFlow("")
     val year = MutableStateFlow("")
     val licensePlate = MutableStateFlow("")
+    val imageUri = MutableStateFlow<Uri?>(null)
 
     private val _modelSuggestions = MutableStateFlow<List<ModelDto>>(emptyList())
     val modelSuggestions = _modelSuggestions.asStateFlow()
@@ -47,6 +49,10 @@ class AddVehicleViewModel @Inject constructor(
         licensePlate.value = value
     }
 
+    fun onImageSelected(uri: Uri) {
+        imageUri.value = uri
+    }
+
     fun onModelSelected(model: ModelDto) {
         modelo.value = model.modelName
     }
@@ -63,7 +69,8 @@ class AddVehicleViewModel @Inject constructor(
                 make = marca.value,
                 model = modelo.value,
                 year = year.value.toIntOrNull() ?: 0,
-                licensePlate = licensePlate.value
+                licensePlate = licensePlate.value,
+                imageUri = imageUri.value?.toString()
             )
             withContext(Dispatchers.IO) {
                 vehicleDao.insertVehicle(vehicle)
