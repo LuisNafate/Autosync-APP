@@ -120,7 +120,7 @@ fun AddVehicleScreen(
             OutlinedButton(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Image, contentDescription = "Imagen del vehículo", tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Imagen del vehículo (opcional)", color = Color.White)
+                Text("Imagen del vehículo (opcional)", color =  Color.White)
             }
             Spacer(modifier = Modifier.height(16.dp))
 
