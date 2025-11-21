@@ -1,5 +1,6 @@
 package com.autosync.main.ui.screens.addvehicle
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,10 +21,10 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -49,7 +50,7 @@ fun AddVehicleScreen(
     val modelo by viewModel.modelo.collectAsState()
     val year by viewModel.year.collectAsState()
     val licensePlate by viewModel.licensePlate.collectAsState()
-    val carSuggestions by viewModel.carSuggestions.collectAsState()
+    val modelSuggestions by viewModel.modelSuggestions.collectAsState()
 
     var isModelsDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -79,22 +80,27 @@ fun AddVehicleScreen(
             Text("Modelo")
             ExposedDropdownMenuBox(
                 expanded = isModelsDropdownExpanded,
-                onExpandedChange = { isModelsDropdownExpanded = it }
+                onExpandedChange = { isModelsDropdownExpanded = !isModelsDropdownExpanded }
             ) {
-                TextField(
+                CustomTextField(
                     value = modelo,
                     onValueChange = { viewModel.onModeloChange(it) },
-                    readOnly = carSuggestions.isNotEmpty(),
-                    placeholder = { Text("Corolla") },
+                    label = "",
+                    placeholder = "Selecciona un modelo",
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModelsDropdownExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    readOnly = true
                 )
-                ExposedDropdownMenu(expanded = isModelsDropdownExpanded, onDismissRequest = { isModelsDropdownExpanded = false }) {
-                    carSuggestions.forEach {
+                ExposedDropdownMenu(
+                    expanded = isModelsDropdownExpanded,
+                    onDismissRequest = { isModelsDropdownExpanded = false },
+                    modifier = Modifier.background(Color(0xFF1F2937))
+                ) {
+                    modelSuggestions.forEach {
                         DropdownMenuItem(
-                            text = { Text("${it.model} (${it.year})") },
+                            text = { Text(it.modelName, color = Color.White) },
                             onClick = {
-                                viewModel.onCarSelected(it)
+                                viewModel.onModelSelected(it)
                                 isModelsDropdownExpanded = false
                             }
                         )
