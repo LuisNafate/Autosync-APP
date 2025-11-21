@@ -193,7 +193,7 @@ fun HomeScreen(
 fun VehicleCard(vehicle: Vehicle) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
         modifier = Modifier.width(180.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
