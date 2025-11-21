@@ -105,7 +105,7 @@ fun VehiclesScreen(
                             vehicle = vehicle,
                             onEditClick = { onNavigateToEditVehicle(vehicle.id) },
                             onDeleteClick = {
-                                vehicleToDelete = it
+                                vehicleToDelete = vehicle
                                 showDeleteDialog = true
                             }
                         )
