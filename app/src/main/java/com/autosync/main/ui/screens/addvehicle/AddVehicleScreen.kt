@@ -1,6 +1,11 @@
 package com.autosync.main.ui.screens.addvehicle
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,11 +37,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.autosync.main.ui.components.CustomTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,8 +59,16 @@ fun AddVehicleScreen(
     val year by viewModel.year.collectAsState()
     val licensePlate by viewModel.licensePlate.collectAsState()
     val modelSuggestions by viewModel.modelSuggestions.collectAsState()
+    val imageUri by viewModel.imageUri.collectAsState()
 
     var isModelsDropdownExpanded by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let { viewModel.onImageSelected(it) }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -117,10 +133,25 @@ fun AddVehicleScreen(
             CustomTextField(modifier = Modifier.fillMaxWidth(), value = licensePlate, onValueChange = viewModel::onLicensePlateChange, label = "", placeholder = "ABC-123")
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedButton(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+            if (imageUri != null) {
+                Box(modifier = Modifier.height(200.dp).fillMaxWidth()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = "Imagen del vehículo seleccionada",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            OutlinedButton(
+                onClick = { imagePickerLauncher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Icon(Icons.Default.Image, contentDescription = "Imagen del vehículo", tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Imagen del vehículo (opcional)", color =  Color.White)
+                Text(if (imageUri == null) "Imagen del vehículo (opcional)" else "Cambiar imagen", color = Color.White)
             }
             Spacer(modifier = Modifier.height(16.dp))
 

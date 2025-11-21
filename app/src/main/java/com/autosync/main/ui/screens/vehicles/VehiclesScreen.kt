@@ -31,11 +31,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.autosync.main.R
 import com.autosync.main.data.local.model.Vehicle
 
@@ -93,11 +95,14 @@ fun VehicleListItem(vehicle: Vehicle) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // TODO: Replace with actual image loading logic
             Image(
-                painter = painterResource(id = R.drawable.ic_car_placeholder),
+                painter = rememberAsyncImagePainter(
+                    model = vehicle.imageUri,
+                    error = painterResource(id = R.drawable.ic_car_placeholder)
+                ),
                 contentDescription = "Imagen del vehículo",
-                modifier = Modifier.size(100.dp)
+                modifier = Modifier.size(100.dp),
+                contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.padding(horizontal = 8.dp))
             Column {
