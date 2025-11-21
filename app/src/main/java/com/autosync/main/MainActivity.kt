@@ -5,14 +5,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.autosync.main.ui.navigation.BottomNavigationBar
 import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
@@ -40,7 +41,6 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // Rutas que no muestran la barra de navegación inferior
     val routesWithoutBottomBar = setOf("login", "registro")
     val currentRoute = navController.currentBackStackEntry?.destination?.route
 
@@ -52,7 +52,7 @@ fun AppNavigation() {
         }
     ) {
         NavHost(
-            navController = navController, 
+            navController = navController,
             startDestination = "login",
             modifier = Modifier.padding(it)
         ) {
@@ -79,13 +79,24 @@ fun AppNavigation() {
                 )
             }
             composable("home") {
-                HomeScreen(onNavigateToAddVehicle = { navController.navigate("add_vehicle") })
+                HomeScreen(onNavigateToAddVehicle = { navController.navigate("vehicle_details") })
             }
-            composable("add_vehicle") {
+            composable(
+                route = "vehicle_details?vehicleId={vehicleId}",
+                arguments = listOf(navArgument("vehicleId") { 
+                    type = NavType.IntType
+                    defaultValue = -1
+                })
+            ) {
                 AddVehicleScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable("vehicles") {
-                VehiclesScreen(onNavigateToAddVehicle = { navController.navigate("add_vehicle") })
+                VehiclesScreen(
+                    onNavigateToAddVehicle = { navController.navigate("vehicle_details") },
+                    onNavigateToEditVehicle = { vehicleId ->
+                        navController.navigate("vehicle_details?vehicleId=$vehicleId")
+                    }
+                )
             }
         }
     }

@@ -1,6 +1,8 @@
 package com.autosync.main.ui.screens.addvehicle
 
 import android.net.Uri
+import androidx.core.net.toUri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.dao.VehicleDao
@@ -18,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AddVehicleViewModel @Inject constructor(
     private val vehicleDao: VehicleDao,
-    private val vehicleApiRepository: VehicleApiRepository
+    private val vehicleApiRepository: VehicleApiRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     val marca = MutableStateFlow("")
@@ -29,6 +32,29 @@ class AddVehicleViewModel @Inject constructor(
 
     private val _modelSuggestions = MutableStateFlow<List<ModelDto>>(emptyList())
     val modelSuggestions = _modelSuggestions.asStateFlow()
+
+    private var editingVehicleId: Int? = savedStateHandle.get<Int>("vehicleId")
+
+    init {
+        editingVehicleId?.let {
+            if (it != -1) { // Hilt/Navigation passes -1 for missing optional args
+                loadVehicle(it)
+            }
+        }
+    }
+
+    private fun loadVehicle(id: Int) {
+        viewModelScope.launch {
+            val vehicle = vehicleDao.getVehicleById(id)
+            vehicle?.let {
+                marca.value = it.make
+                modelo.value = it.model
+                year.value = it.year.toString()
+                licensePlate.value = it.licensePlate
+                imageUri.value = it.imageUri?.toUri()
+            }
+        }
+    }
 
     fun onMarcaChange(value: String) {
         marca.value = value
@@ -66,6 +92,7 @@ class AddVehicleViewModel @Inject constructor(
     fun saveVehicle() {
         viewModelScope.launch {
             val vehicle = Vehicle(
+                id = editingVehicleId ?: 0,
                 make = marca.value,
                 model = modelo.value,
                 year = year.value.toIntOrNull() ?: 0,
@@ -73,8 +100,16 @@ class AddVehicleViewModel @Inject constructor(
                 imageUri = imageUri.value?.toString()
             )
             withContext(Dispatchers.IO) {
-                vehicleDao.insertVehicle(vehicle)
+                if (editingVehicleId != null && editingVehicleId != -1) {
+                    updateVehicle(vehicle)
+                } else {
+                    vehicleDao.insertVehicle(vehicle)
+                }
             }
         }
+    }
+
+    private suspend fun updateVehicle(vehicle: Vehicle) {
+        vehicleDao.updateVehicle(vehicle)
     }
 }

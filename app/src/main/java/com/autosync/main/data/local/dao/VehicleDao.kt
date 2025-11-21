@@ -24,4 +24,7 @@ interface VehicleDao {
     @Query("SELECT * FROM vehicles")
     fun getVehicles(): Flow<List<Vehicle>>
 
+    @Query("SELECT * FROM vehicles WHERE id = :id")
+    suspend fun getVehicleById(id: Int): Vehicle?
+
 }

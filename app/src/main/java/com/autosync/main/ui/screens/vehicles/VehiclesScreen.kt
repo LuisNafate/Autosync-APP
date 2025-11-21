@@ -52,6 +52,7 @@ import com.autosync.main.data.local.model.Vehicle
 @Composable
 fun VehiclesScreen(
     onNavigateToAddVehicle: () -> Unit,
+    onNavigateToEditVehicle: (Int) -> Unit,
     viewModel: VehiclesViewModel = hiltViewModel()
 ) {
     val vehicles by viewModel.vehicles.collectAsState()
@@ -102,6 +103,7 @@ fun VehiclesScreen(
                     items(vehicles) { vehicle ->
                         VehicleListItem(
                             vehicle = vehicle,
+                            onEditClick = { onNavigateToEditVehicle(vehicle.id) },
                             onDeleteClick = {
                                 vehicleToDelete = it
                                 showDeleteDialog = true
@@ -117,6 +119,7 @@ fun VehiclesScreen(
 @Composable
 fun VehicleListItem(
     vehicle: Vehicle,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Card(
@@ -147,7 +150,7 @@ fun VehicleListItem(
                         Text("Ver historial", color = Color(0xFF3B82F6))
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { /* TODO: Edit vehicle */ }) {
+                    IconButton(onClick = onEditClick) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar vehículo", tint = Color.Gray)
                     }
                     IconButton(onClick = onDeleteClick) {
