@@ -19,6 +19,7 @@ import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
 import com.autosync.main.ui.screens.login.LoginScreen
 import com.autosync.main.ui.screens.registro.RegistroScreen
+import com.autosync.main.ui.screens.vehiclehistory.VehicleHistoryScreen
 import com.autosync.main.ui.screens.vehicles.VehiclesScreen
 import com.autosync.main.ui.theme.MainTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -95,8 +96,17 @@ fun AppNavigation() {
                     onNavigateToAddVehicle = { navController.navigate("vehicle_details") },
                     onNavigateToEditVehicle = { vehicleId ->
                         navController.navigate("vehicle_details?vehicleId=$vehicleId")
+                    },
+                    onNavigateToVehicleHistory = { vehicleId ->
+                        navController.navigate("vehicle_history/$vehicleId")
                     }
                 )
+            }
+            composable(
+                route = "vehicle_history/{vehicleId}",
+                arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
+            ) {
+                VehicleHistoryScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }

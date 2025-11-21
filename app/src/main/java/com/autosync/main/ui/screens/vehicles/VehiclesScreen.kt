@@ -53,6 +53,7 @@ import com.autosync.main.data.local.model.Vehicle
 fun VehiclesScreen(
     onNavigateToAddVehicle: () -> Unit,
     onNavigateToEditVehicle: (Int) -> Unit,
+    onNavigateToVehicleHistory: (Int) -> Unit,
     viewModel: VehiclesViewModel = hiltViewModel()
 ) {
     val vehicles by viewModel.vehicles.collectAsState()
@@ -103,6 +104,7 @@ fun VehiclesScreen(
                     items(vehicles) { vehicle ->
                         VehicleListItem(
                             vehicle = vehicle,
+                            onHistoryClick = { onNavigateToVehicleHistory(vehicle.id) },
                             onEditClick = { onNavigateToEditVehicle(vehicle.id) },
                             onDeleteClick = {
                                 vehicleToDelete = vehicle
@@ -119,6 +121,7 @@ fun VehiclesScreen(
 @Composable
 fun VehicleListItem(
     vehicle: Vehicle,
+    onHistoryClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -146,7 +149,7 @@ fun VehicleListItem(
                 Text("${vehicle.year}", fontSize = 16.sp, color = Color.Gray)
                 Text("Placas: ${vehicle.licensePlate}", fontSize = 16.sp, color = Color.Gray)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { /* TODO: Navigate to history */ }) {
+                    TextButton(onClick = onHistoryClick) {
                         Text("Ver historial", color = Color(0xFF3B82F6))
                     }
                     Spacer(modifier = Modifier.weight(1f))
