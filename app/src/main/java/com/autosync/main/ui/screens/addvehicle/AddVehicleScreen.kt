@@ -49,7 +49,7 @@ fun AddVehicleScreen(
     val modelo by viewModel.modelo.collectAsState()
     val year by viewModel.year.collectAsState()
     val licensePlate by viewModel.licensePlate.collectAsState()
-    val models by viewModel.models.collectAsState()
+    val carSuggestions by viewModel.carSuggestions.collectAsState()
 
     var isModelsDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -84,17 +84,17 @@ fun AddVehicleScreen(
                 TextField(
                     value = modelo,
                     onValueChange = { viewModel.onModeloChange(it) },
-                    readOnly = models.isNotEmpty(),
+                    readOnly = carSuggestions.isNotEmpty(),
                     placeholder = { Text("Corolla") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModelsDropdownExpanded) },
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 ExposedDropdownMenu(expanded = isModelsDropdownExpanded, onDismissRequest = { isModelsDropdownExpanded = false }) {
-                    models.forEach {
+                    carSuggestions.forEach {
                         DropdownMenuItem(
-                            text = { Text(it) },
+                            text = { Text("${it.model} (${it.year})") },
                             onClick = {
-                                viewModel.onModeloChange(it)
+                                viewModel.onCarSelected(it)
                                 isModelsDropdownExpanded = false
                             }
                         )

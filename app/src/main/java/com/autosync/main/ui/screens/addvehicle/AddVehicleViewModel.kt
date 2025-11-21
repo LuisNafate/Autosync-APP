@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.dao.VehicleDao
 import com.autosync.main.data.local.model.Vehicle
+import com.autosync.main.data.remote.dto.CarDto
 import com.autosync.main.data.remote.repository.VehicleApiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -24,8 +25,8 @@ class AddVehicleViewModel @Inject constructor(
     val year = MutableStateFlow("")
     val licensePlate = MutableStateFlow("")
 
-    private val _models = MutableStateFlow<List<String>>(emptyList())
-    val models = _models.asStateFlow()
+    private val _carSuggestions = MutableStateFlow<List<CarDto>>(emptyList())
+    val carSuggestions = _carSuggestions.asStateFlow()
 
     fun onMarcaChange(value: String) {
         marca.value = value
@@ -46,10 +47,14 @@ class AddVehicleViewModel @Inject constructor(
         licensePlate.value = value
     }
 
+    fun onCarSelected(car: CarDto) {
+        modelo.value = car.model
+        year.value = car.year.toString()
+    }
+
     private fun searchModels() {
         viewModelScope.launch {
-            val result = vehicleApiRepository.getCarsByMake(marca.value)
-            _models.value = result.map { it.model }.distinct()
+            _carSuggestions.value = vehicleApiRepository.getCarsByMake(marca.value)
         }
     }
 

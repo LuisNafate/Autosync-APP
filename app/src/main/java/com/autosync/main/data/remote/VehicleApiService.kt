@@ -1,16 +1,14 @@
 package com.autosync.main.data.remote
 
-import com.autosync.main.data.remote.dto.CarDto
+import com.autosync.main.data.remote.nhtsa.dto.ModelsForMakeResponse
 import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.Query
+import retrofit2.http.Path
 
 interface VehicleApiService {
 
-    @GET("cars")
-    suspend fun getCarsByMake(
-        @Query("make") make: String,
-        @Header("X-Api-Key") apiKey: String = "bdtsZN3uovHOde20wP1hGg==36itdE0mmdaL0V3h"
-    ): List<CarDto>
+    @GET("vehicles/GetModelsForMake/{make}?format=json")
+    suspend fun getModelsForMake(
+        @Path("make") make: String
+    ): ModelsForMakeResponse
 
 }
