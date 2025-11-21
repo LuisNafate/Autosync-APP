@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Email
@@ -70,10 +73,13 @@ fun RegistroScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(5.dp))
             Text(
                 text = "Crea una cuenta",
                 fontSize = 28.sp,
@@ -236,7 +242,7 @@ fun RegistroScreen(
                 ) {
                     Icon(imageVector = GoogleIcon, contentDescription = "Google Icon", tint = Color.Unspecified)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Google")
+                    Text("Google", color = Color.White)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedButton(
@@ -246,7 +252,7 @@ fun RegistroScreen(
                 ) {
                     Icon(imageVector = FacebookIcon, contentDescription = "Facebook Icon", tint = Color.Unspecified)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Facebook")
+                    Text("Facebook", color = Color.White)
                 }
             }
 
