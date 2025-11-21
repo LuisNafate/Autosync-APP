@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,22 +47,23 @@ fun VehiclesScreen(
 ) {
     val vehicles by viewModel.vehicles.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Vehículos", fontWeight = FontWeight.Bold, fontSize = 24.sp) })
-        }
-    ) {
+    Scaffold {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
                 .padding(16.dp)
         ) {
-            Text("Mis Vehículos", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text("Mis Vehículos", fontWeight = FontWeight.Bold, fontSize = 24.sp)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onNavigateToAddVehicle, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar vehículo")
-                Text("Agregar nuevo vehículo")
+            Button(
+                onClick = onNavigateToAddVehicle, 
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10374A))
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar vehículo", tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Agregar nuevo vehículo", color = Color.White)
             }
             Spacer(modifier = Modifier.height(16.dp))
             if (vehicles.isEmpty()) {
@@ -103,7 +105,7 @@ fun VehicleListItem(vehicle: Vehicle) {
                 Text("${vehicle.year}", fontSize = 16.sp, color = Color.Gray)
                 Text("Placas: ${vehicle.licensePlate}", fontSize = 16.sp, color = Color.Gray)
                 TextButton(onClick = { /* TODO: Navigate to history */ }) {
-                    Text("Ver historial")
+                    Text("Ver historial", color = Color(0xFF3B82F6))
                 }
             }
         }
