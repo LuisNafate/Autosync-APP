@@ -12,11 +12,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Notifications
@@ -24,6 +29,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,12 +51,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.autosync.main.data.local.model.Vehicle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToAddVehicle: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -133,7 +141,7 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = it.nombre.first().uppercase(),
+                                text = it.nombre.firstOrNull()?.uppercase() ?: "U",
                                 color = Color.White,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
@@ -147,7 +155,17 @@ fun HomeScreen(
 
                 Text("Mis vehículos", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("No tienes vehículos registrados", color = Color.Gray)
+
+                if (state.vehicles.isEmpty()) {
+                    Text("No tienes vehículos registrados", color = Color.Gray)
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(state.vehicles) { vehicle ->
+                            VehicleCard(vehicle = vehicle)
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onNavigateToAddVehicle,
@@ -157,7 +175,7 @@ fun HomeScreen(
                     Icon(Icons.Default.Add, contentDescription = "Agregar vehículo", tint = Color.White)
                     Text("Agregar nuevo vehículo", color = Color.White)
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
                 Text("Servicios recientes", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -167,6 +185,22 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("No tienes facturas recientes", color = Color.Gray)
             }
+        }
+    }
+}
+
+@Composable
+fun VehicleCard(vehicle: Vehicle) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E)),
+        modifier = Modifier.width(180.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Icon(Icons.Default.DirectionsCar, contentDescription = "Vehículo", tint = Color.White, modifier = Modifier.size(40.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("${vehicle.make} ${vehicle.year}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+            Text("Placas: ${vehicle.licensePlate}", fontSize = 14.sp, color = Color.Gray)
         }
     }
 }
