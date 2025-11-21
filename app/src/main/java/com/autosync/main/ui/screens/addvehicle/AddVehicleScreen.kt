@@ -22,16 +22,27 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.autosync.main.ui.components.CustomTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddVehicleScreen(onNavigateBack: () -> Unit) {
+fun AddVehicleScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: AddVehicleViewModel = hiltViewModel()
+) {
+
+    val marca by viewModel.marca.collectAsState()
+    val modelo by viewModel.modelo.collectAsState()
+    val year by viewModel.year.collectAsState()
+    val licensePlate by viewModel.licensePlate.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,19 +63,19 @@ fun AddVehicleScreen(onNavigateBack: () -> Unit) {
                 .padding(16.dp)
         ) {
             Text("Marca")
-            CustomTextField(modifier = Modifier.fillMaxWidth(), value = "", onValueChange = {}, label = "", placeholder = "Toyota")
+            CustomTextField(modifier = Modifier.fillMaxWidth(), value = marca, onValueChange = viewModel::onMarcaChange, label = "", placeholder = "Toyota")
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Modelo")
-            CustomTextField(modifier = Modifier.fillMaxWidth(), value = "", onValueChange = {}, label = "", placeholder = "Corolla")
+            CustomTextField(modifier = Modifier.fillMaxWidth(), value = modelo, onValueChange = viewModel::onModeloChange, label = "", placeholder = "Corolla")
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Año")
-            CustomTextField(modifier = Modifier.fillMaxWidth(), value = "", onValueChange = {}, label = "", placeholder = "2020")
+            CustomTextField(modifier = Modifier.fillMaxWidth(), value = year, onValueChange = viewModel::onYearChange, label = "", placeholder = "2020")
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Placas")
-            CustomTextField(modifier = Modifier.fillMaxWidth(), value = "", onValueChange = {}, label = "", placeholder = "ABC-123")
+            CustomTextField(modifier = Modifier.fillMaxWidth(), value = licensePlate, onValueChange = viewModel::onLicensePlateChange, label = "", placeholder = "ABC-123")
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedButton(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
@@ -74,7 +85,13 @@ fun AddVehicleScreen(onNavigateBack: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = {
+                    viewModel.saveVehicle()
+                    onNavigateBack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Icon(Icons.Filled.DirectionsCar, contentDescription = "Registrar vehículo", tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Registrar vehículo", color = Color.White)
