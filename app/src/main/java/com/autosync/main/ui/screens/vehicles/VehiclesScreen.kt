@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -31,6 +32,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +55,23 @@ fun VehiclesScreen(
     viewModel: VehiclesViewModel = hiltViewModel()
 ) {
     val vehicles by viewModel.vehicles.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var vehicleToDelete by remember { mutableStateOf<Vehicle?>(null) }
+
+    if (showDeleteDialog && vehicleToDelete != null) {
+        DeleteConfirmationDialog(
+            vehicleName = "${vehicleToDelete!!.make} ${vehicleToDelete!!.model}",
+            onConfirm = {
+                viewModel.deleteVehicle(vehicleToDelete!!)
+                showDeleteDialog = false
+                vehicleToDelete = null
+            },
+            onDismiss = {
+                showDeleteDialog = false
+                vehicleToDelete = null
+            }
+        )
+    }
 
     Scaffold {
         Column(
@@ -79,7 +100,13 @@ fun VehiclesScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(vehicles) { vehicle ->
-                        VehicleListItem(vehicle = vehicle)
+                        VehicleListItem(
+                            vehicle = vehicle,
+                            onDeleteClick = {
+                                vehicleToDelete = it
+                                showDeleteDialog = true
+                            }
+                        )
                     }
                 }
             }
@@ -88,7 +115,10 @@ fun VehiclesScreen(
 }
 
 @Composable
-fun VehicleListItem(vehicle: Vehicle) {
+fun VehicleListItem(
+    vehicle: Vehicle,
+    onDeleteClick: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
@@ -120,11 +150,37 @@ fun VehicleListItem(vehicle: Vehicle) {
                     IconButton(onClick = { /* TODO: Edit vehicle */ }) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar vehículo", tint = Color.Gray)
                     }
-                    IconButton(onClick = { /* TODO: Delete vehicle */ }) {
+                    IconButton(onClick = onDeleteClick) {
                         Icon(Icons.Default.Delete, contentDescription = "Borrar vehículo", tint = Color.Gray)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    vehicleName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirmar borrado") },
+        text = { Text("¿Estás seguro de que quieres eliminar el vehículo \"$vehicleName\"?") },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Eliminar", color = Color.White)
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

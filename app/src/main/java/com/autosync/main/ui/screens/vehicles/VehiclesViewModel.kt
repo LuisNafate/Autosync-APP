@@ -8,11 +8,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class VehiclesViewModel @Inject constructor(
-    vehicleDao: VehicleDao
+    private val vehicleDao: VehicleDao
 ) : ViewModel() {
 
     val vehicles: StateFlow<List<Vehicle>> = vehicleDao.getVehicles()
@@ -21,4 +22,10 @@ class VehiclesViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    fun deleteVehicle(vehicle: Vehicle) {
+        viewModelScope.launch {
+            vehicleDao.deleteVehicle(vehicle)
+        }
+    }
 }
