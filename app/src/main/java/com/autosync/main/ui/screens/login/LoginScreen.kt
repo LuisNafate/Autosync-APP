@@ -190,7 +190,7 @@ fun LoginScreen(
                 ) {
                     Icon(imageVector = GoogleIcon, contentDescription = "Google Icon", tint = Color.Unspecified)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Google")
+                    Text("Google", color = Color.White)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedButton(
@@ -200,7 +200,7 @@ fun LoginScreen(
                 ) {
                     Icon(imageVector = FacebookIcon, contentDescription = "Facebook Icon", tint = Color.Unspecified)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Facebook")
+                    Text("Facebook", color = Color.White)
                 }
             }
 
