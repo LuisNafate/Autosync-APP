@@ -1,4 +1,7 @@
-package com.autosync.main.ui.theme.screens.home
+package com.autosync.main.ui.screens.home
 
-class HomeViewModel {
+import androidx.lifecycle.ViewModel
+
+class HomeViewModel : ViewModel() {
+    // Lógica del ViewModel irá aquí
 }
