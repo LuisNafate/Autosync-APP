@@ -1,5 +1,6 @@
 package com.autosync.main.di
 
+import com.autosync.main.data.remote.VehicleApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,5 +20,11 @@ object NetworkModule {
             .baseUrl("https://api.api-ninjas.com/v1/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideVehicleApiService(retrofit: Retrofit): VehicleApiService {
+        return retrofit.create(VehicleApiService::class.java)
     }
 }
