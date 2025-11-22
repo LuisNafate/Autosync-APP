@@ -93,6 +93,14 @@ fun RegistroScreen(
                 color = Color.Gray
             )
 
+            if (state.generalError != null) {
+                Text(
+                    text = state.generalError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Column(modifier = Modifier.fillMaxWidth()) {

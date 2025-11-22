@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.autosync.main" />
+                  <option name="mobileSdkAppId" value="1:510711962650:android:03562c8458b8ec3a8d45a3" />
+                  <option name="projectId" value="com-autosync-main" />
+                  <option name="projectNumber" value="510711962650" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
