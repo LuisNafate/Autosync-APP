@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "510711962650",
+    "project_id": "com-autosync-main",
+    "storage_bucket": "com-autosync-main.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:510711962650:android:03562c8458b8ec3a8d45a3",
+        "android_client_info": {
+          "package_name": "com.autosync.main"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAopKCIyAjjR3_a2-GDEwajFgLqyR7XgY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
