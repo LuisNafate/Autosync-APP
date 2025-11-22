@@ -2,10 +2,14 @@ package com.autosync.main.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class LoginState(
     val email: String = "",
@@ -14,12 +18,15 @@ data class LoginState(
     val isLoading: Boolean = false,
     val isLoginSuccessful: Boolean = false,
     val emailError: String? = null,
-    val passwordError: String? = null
+    val passwordError: String? = null,
+    val generalError: String? = null
 )
 
 class LoginViewModel : ViewModel() {
     private val _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state.asStateFlow()
+
+    private val auth: FirebaseAuth = Firebase.auth
 
     fun onEmailChange(email: String) {
         _state.value = _state.value.copy(email = email, emailError = null)
@@ -35,27 +42,31 @@ class LoginViewModel : ViewModel() {
 
     fun login() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
-
-            // Simulate API call
-            kotlinx.coroutines.delay(1000)
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
 
             // Validations
             val emailError = if (state.value.email.isBlank()) "El email es requerido" else null
             val passwordError = if (state.value.password.isBlank()) "La contraseña es requerida" else null
 
-            val hasErrors = listOf(emailError, passwordError).any { it != null }
-
-            if (!hasErrors) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    isLoginSuccessful = true
-                )
-            } else {
+            if (emailError != null || passwordError != null) {
                 _state.value = _state.value.copy(
                     isLoading = false,
                     emailError = emailError,
                     passwordError = passwordError
+                )
+                return@launch
+            }
+
+            try {
+                auth.signInWithEmailAndPassword(state.value.email, state.value.password).await()
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    isLoginSuccessful = true
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    generalError = "El email o la contraseña son incorrectos."
                 )
             }
         }
