@@ -2,10 +2,15 @@ package com.autosync.main.ui.screens.registro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class RegistroState(
     val nombre: String = "",
@@ -19,12 +24,16 @@ data class RegistroState(
     val emailError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
-    val terminosError: String? = null
+    val terminosError: String? = null,
+    val generalError: String? = null
 )
 
 class RegistroViewModel : ViewModel() {
     private val _state = MutableStateFlow(RegistroState())
     val state: StateFlow<RegistroState> = _state.asStateFlow()
+
+    private val auth: FirebaseAuth = Firebase.auth
+    private val userRepository = UserRepository()
 
     fun onNombreChange(nombre: String) {
         _state.value = _state.value.copy(nombre = nombre, nombreError = null)
@@ -48,10 +57,7 @@ class RegistroViewModel : ViewModel() {
 
     fun registrar() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
-
-            // Simular llamada a API
-            kotlinx.coroutines.delay(1000)
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
 
             // Validaciones
             val nombreError = if (_state.value.nombre.isBlank()) "El nombre es requerido" else null
@@ -62,12 +68,7 @@ class RegistroViewModel : ViewModel() {
 
             val hasErrors = listOf(nombreError, emailError, passwordError, confirmPasswordError, terminosError).any { it != null }
 
-            if (!hasErrors) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    isRegistroSuccessful = true
-                )
-            } else {
+            if (hasErrors) {
                 _state.value = _state.value.copy(
                     isLoading = false,
                     nombreError = nombreError,
@@ -75,6 +76,28 @@ class RegistroViewModel : ViewModel() {
                     passwordError = passwordError,
                     confirmPasswordError = confirmPasswordError,
                     terminosError = terminosError
+                )
+                return@launch
+            }
+
+            try {
+                val result = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
+                _state.value = _state.value.copy(isRegistroSuccessful = true)
+                
+                val firebaseUser = result.user
+                if (firebaseUser != null) {
+                    viewModelScope.launch {
+                        userRepository.guardarUsuario(
+                            uid = firebaseUser.uid,
+                            nombre = _state.value.nombre,
+                            email = _state.value.email
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    generalError = e.message ?: "Ocurrió un error inesperado"
                 )
             }
         }
