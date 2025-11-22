@@ -99,7 +99,7 @@ fun VehiclesScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy (16.dp)
                 ) {
                     items(vehicles) { vehicle ->
                         VehicleListItem(
