@@ -24,6 +24,11 @@ class AddVehicleViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    companion object {
+        private const val INVALID_VEHICLE_ID = -1
+        private const val MIN_SEARCH_LENGTH = 2
+    }
+
     val marca = MutableStateFlow("")
     val modelo = MutableStateFlow("")
     val year = MutableStateFlow("")
@@ -37,7 +42,7 @@ class AddVehicleViewModel @Inject constructor(
 
     init {
         editingVehicleId?.let {
-            if (it != -1) { // Hilt/Navigation passes -1 for missing optional args
+            if (it != INVALID_VEHICLE_ID) { // Hilt/Navigation passes -1 for missing optional args
                 loadVehicle(it)
             }
         }
@@ -58,7 +63,7 @@ class AddVehicleViewModel @Inject constructor(
 
     fun onMarcaChange(value: String) {
         marca.value = value
-        if (value.length > 2) { // To avoid too many API calls
+        if (value.length > MIN_SEARCH_LENGTH) { // To avoid too many API calls
             searchModels()
         }
     }
@@ -100,7 +105,7 @@ class AddVehicleViewModel @Inject constructor(
                 imageUri = imageUri.value?.toString()
             )
             withContext(Dispatchers.IO) {
-                if (editingVehicleId != null && editingVehicleId != -1) {
+                if (editingVehicleId != null && editingVehicleId != INVALID_VEHICLE_ID) {
                     updateVehicle(vehicle)
                 } else {
                     vehicleDao.insertVehicle(vehicle)

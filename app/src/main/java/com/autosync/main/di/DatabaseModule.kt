@@ -22,7 +22,10 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "autosync_database"
-        ).fallbackToDestructiveMigration().build()
+        )
+            // TODO: Implement proper migration strategy for production
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
