@@ -22,7 +22,8 @@ fun CustomTextField(
     errorMessage: String? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    readOnly: Boolean = false
 ) {
     OutlinedTextField(
         modifier = modifier,
@@ -38,6 +39,7 @@ fun CustomTextField(
         singleLine = true,
         shape = RoundedCornerShape(10.dp),
         keyboardOptions = KeyboardOptions.Default,
+        readOnly = readOnly,
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = MaterialTheme.colorScheme.onSurface,
             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
