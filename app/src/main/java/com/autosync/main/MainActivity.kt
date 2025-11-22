@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.autosync.main.ui.navigation.BottomNavigationBar
+import com.autosync.main.ui.screens.addservice.AddServiceScreen
 import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
 import com.autosync.main.ui.screens.login.LoginScreen
@@ -106,7 +107,18 @@ fun AppNavigation() {
                 route = "vehicle_history/{vehicleId}",
                 arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
             ) {
-                VehicleHistoryScreen(onNavigateBack = { navController.popBackStack() })
+                VehicleHistoryScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToAddService = { vehicleId ->
+                        navController.navigate("add_service/$vehicleId")
+                    }
+                )
+            }
+            composable(
+                route = "add_service/{vehicleId}",
+                arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
+            ) {
+                AddServiceScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }
