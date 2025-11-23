@@ -3,6 +3,7 @@ package com.autosync.main.di
 import android.content.Context
 import androidx.room.Room
 import com.autosync.main.data.local.AppDatabase
+import com.autosync.main.data.local.dao.ServicioDao
 import com.autosync.main.data.local.dao.VehicleDao
 import dagger.Module
 import dagger.Provides
@@ -28,5 +29,10 @@ object DatabaseModule {
     @Provides
     fun provideVehicleDao(appDatabase: AppDatabase): VehicleDao {
         return appDatabase.vehicleDao()
+    }
+
+    @Provides
+    fun provideServicioDao(appDatabase: AppDatabase): ServicioDao {
+        return appDatabase.servicioDao()
     }
 }
