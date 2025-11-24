@@ -5,10 +5,10 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.local.dao.VehicleDao
 import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.remote.nhtsa.dto.ModelDto
 import com.autosync.main.data.remote.repository.VehicleApiRepository
+import com.autosync.main.data.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddVehicleViewModel @Inject constructor(
-    private val vehicleDao: VehicleDao,
+    private val vehicleRepository: VehicleRepository,
     private val vehicleApiRepository: VehicleApiRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -45,7 +45,7 @@ class AddVehicleViewModel @Inject constructor(
 
     private fun loadVehicle(id: Int) {
         viewModelScope.launch {
-            val vehicle = vehicleDao.getVehicleById(id)
+            val vehicle = vehicleRepository.getVehicleById(id)
             vehicle?.let {
                 marca.value = it.make
                 modelo.value = it.model
@@ -101,15 +101,11 @@ class AddVehicleViewModel @Inject constructor(
             )
             withContext(Dispatchers.IO) {
                 if (editingVehicleId != null && editingVehicleId != -1) {
-                    updateVehicle(vehicle)
+                    vehicleRepository.updateVehicle(vehicle)
                 } else {
-                    vehicleDao.insertVehicle(vehicle)
+                    vehicleRepository.insertVehicle(vehicle)
                 }
             }
         }
-    }
-
-    private suspend fun updateVehicle(vehicle: Vehicle) {
-        vehicleDao.updateVehicle(vehicle)
     }
 }

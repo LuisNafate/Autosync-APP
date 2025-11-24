@@ -2,8 +2,8 @@ package com.autosync.main.ui.screens.vehicles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.local.dao.VehicleDao
 import com.autosync.main.data.local.model.Vehicle
+import com.autosync.main.data.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,10 +13,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VehiclesViewModel @Inject constructor(
-    private val vehicleDao: VehicleDao
+    private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
-    val vehicles: StateFlow<List<Vehicle>> = vehicleDao.getVehicles()
+    val vehicles: StateFlow<List<Vehicle>> = vehicleRepository.getVehicles()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -25,7 +25,7 @@ class VehiclesViewModel @Inject constructor(
 
     fun deleteVehicle(vehicle: Vehicle) {
         viewModelScope.launch {
-            vehicleDao.deleteVehicle(vehicle)
+            vehicleRepository.deleteVehicle(vehicle)
         }
     }
 }
