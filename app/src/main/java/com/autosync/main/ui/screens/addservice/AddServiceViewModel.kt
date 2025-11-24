@@ -3,8 +3,8 @@ package com.autosync.main.ui.screens.addservice
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.local.dao.ServiceDao
 import com.autosync.main.data.local.model.Service
+import com.autosync.main.data.repository.ServiceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddServiceViewModel @Inject constructor(
-    private val serviceDao: ServiceDao,
+    private val serviceRepository: ServiceRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -56,7 +56,7 @@ class AddServiceViewModel @Inject constructor(
                 description = description.value,
                 cost = cost.value.toDoubleOrNull()
             )
-            serviceDao.insertService(newService)
+            serviceRepository.insertService(newService)
         }
     }
 }
