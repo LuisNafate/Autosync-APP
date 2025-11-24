@@ -2,12 +2,11 @@ package com.autosync.main.ui.screens.registro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -29,76 +28,70 @@ data class RegistroState(
 )
 
 class RegistroViewModel : ViewModel() {
+
     private val _state = MutableStateFlow(RegistroState())
-    val state: StateFlow<RegistroState> = _state.asStateFlow()
+    val state = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
-    private val userRepository = UserRepository()
+    private val firestore = Firebase.firestore
 
     fun onNombreChange(nombre: String) {
-        _state.value = _state.value.copy(nombre = nombre, nombreError = null)
+        _state.value = _state.value.copy(nombre = nombre, nombreError = null, generalError = null)
     }
 
     fun onEmailChange(email: String) {
-        _state.value = _state.value.copy(email = email, emailError = null)
+        _state.value = _state.value.copy(email = email, emailError = null, generalError = null)
     }
 
     fun onPasswordChange(password: String) {
-        _state.value = _state.value.copy(password = password, passwordError = null)
+        _state.value = _state.value.copy(password = password, passwordError = null, generalError = null)
     }
 
     fun onConfirmPasswordChange(confirmPassword: String) {
-        _state.value = _state.value.copy(confirmPassword = confirmPassword, confirmPasswordError = null)
+        _state.value = _state.value.copy(confirmPassword = confirmPassword, confirmPasswordError = null, generalError = null)
     }
 
     fun onAceptaTerminosChange(acepta: Boolean) {
-        _state.value = _state.value.copy(aceptaTerminos = acepta, terminosError = null)
+        _state.value = _state.value.copy(aceptaTerminos = acepta, terminosError = null, generalError = null)
+    }
+
+    private fun validate(): Boolean {
+        var isValid = true
+        if (_state.value.nombre.isBlank()) {
+            _state.value = _state.value.copy(nombreError = "El nombre no puede estar vacío")
+            isValid = false
+        }
+        if (_state.value.password != _state.value.confirmPassword) {
+            _state.value = _state.value.copy(confirmPasswordError = "Las contraseñas no coinciden")
+            isValid = false
+        }
+        if (!_state.value.aceptaTerminos) {
+            _state.value = _state.value.copy(terminosError = "Debes aceptar los términos y condiciones")
+            isValid = false
+        }
+        return isValid
     }
 
     fun registrar() {
+        if (!validate()) return
+
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, generalError = null)
-
-            // Validaciones
-            val nombreError = if (_state.value.nombre.isBlank()) "El nombre es requerido" else null
-            val emailError = if (_state.value.email.isBlank()) "El email es requerido" else null
-            val passwordError = if (_state.value.password.isBlank()) "La contraseña es requerida" else null
-            val confirmPasswordError = if (_state.value.password != _state.value.confirmPassword) "Las contraseñas no coinciden" else null
-            val terminosError = if (!_state.value.aceptaTerminos) "Debes aceptar los términos y condiciones" else null
-
-            val hasErrors = listOf(nombreError, emailError, passwordError, confirmPasswordError, terminosError).any { it != null }
-
-            if (hasErrors) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    nombreError = nombreError,
-                    emailError = emailError,
-                    passwordError = passwordError,
-                    confirmPasswordError = confirmPasswordError,
-                    terminosError = terminosError
-                )
-                return@launch
-            }
-
             try {
-                val result = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
-                _state.value = _state.value.copy(isRegistroSuccessful = true)
-                
-                val firebaseUser = result.user
+                val authResult = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
+                val firebaseUser = authResult.user
                 if (firebaseUser != null) {
-                    viewModelScope.launch {
-                        userRepository.guardarUsuario(
-                            uid = firebaseUser.uid,
-                            nombre = _state.value.nombre,
-                            email = _state.value.email
-                        )
-                    }
+                    val user = hashMapOf(
+                        "nombre" to _state.value.nombre,
+                        "email" to _state.value.email,
+                    )
+                    firestore.collection("users").document(firebaseUser.uid).set(user).await()
+                    _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "No se pudo crear el usuario.")
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    generalError = e.message ?: "Ocurrió un error inesperado"
-                )
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
             }
         }
     }

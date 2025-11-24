@@ -8,19 +8,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.autosync.main.ui.navigation.BottomNavigationBar
+import com.autosync.main.ui.screens.addservice.AddServiceScreen
 import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
 import com.autosync.main.ui.screens.login.LoginScreen
 import com.autosync.main.ui.screens.registro.RegistroScreen
-import com.autosync.main.ui.screens.servicios.RegistrarServicioScreen
-import com.autosync.main.ui.screens.servicios.ServiciosScreen
+import com.autosync.main.ui.screens.vehiclehistory.VehicleHistoryScreen
 import com.autosync.main.ui.screens.vehicles.VehiclesScreen
 import com.autosync.main.ui.theme.MainTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,9 +44,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     val routesWithoutBottomBar = setOf("login", "registro")
-    val currentRoute = navController.currentBackStackEntry?.destination?.route
 
     Scaffold(
         bottomBar = {
@@ -75,52 +78,50 @@ fun AppNavigation() {
                             popUpTo("registro") { inclusive = true }
                         }
                     },
-                    onNavigateToLogin = {
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
+                    onNavigateToLogin = { navController.navigate("login") {
+                        popUpTo("login") { inclusive = true }
+                    } }
                 )
             }
             composable("home") {
-                HomeScreen(
-                    onNavigateToAddVehicle = {
-                        navController.navigate("vehicle_details")
-                    }
-                )
+                HomeScreen(onNavigateToAddVehicle = { navController.navigate("vehicle_details") })
             }
             composable(
                 route = "vehicle_details?vehicleId={vehicleId}",
-                arguments = listOf(navArgument("vehicleId") {
+                arguments = listOf(navArgument("vehicleId") { 
                     type = NavType.IntType
                     defaultValue = -1
                 })
             ) {
-                AddVehicleScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                AddVehicleScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable("vehicles") {
                 VehiclesScreen(
-                    onNavigateToAddVehicle = {
-                        navController.navigate("vehicle_details")
-                    },
+                    onNavigateToAddVehicle = { navController.navigate("vehicle_details") },
                     onNavigateToEditVehicle = { vehicleId ->
                         navController.navigate("vehicle_details?vehicleId=$vehicleId")
+                    },
+                    onNavigateToVehicleHistory = { vehicleId ->
+                        navController.navigate("vehicle_history/$vehicleId")
                     }
                 )
             }
-            composable("services") {
-                ServiciosScreen(
-                    onNavigateToRegistrarServicio = {
-                        navController.navigate("registrar_servicio")
+            composable(
+                route = "vehicle_history/{vehicleId}",
+                arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
+            ) {
+                VehicleHistoryScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToAddService = { vehicleId ->
+                        navController.navigate("add_service/$vehicleId")
                     }
                 )
             }
-            composable("registrar_servicio") {
-                RegistrarServicioScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+            composable(
+                route = "add_service/{vehicleId}",
+                arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
+            ) {
+                AddServiceScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }
