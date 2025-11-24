@@ -1,6 +1,6 @@
 [versions]
-agp = "8.13.1"
-kotlin = "1.7.20"
+agp = "8.1.4"
+kotlin = "1.9.10"
 compose-bom = "2024.02.01"
 core-ktx = "1.12.0"
 lifecycle = "2.7.0"
@@ -9,6 +9,9 @@ navigation-compose = "2.7.6"
 junit = "4.13.2"
 junit-android = "1.1.5"
 espresso = "3.5.1"
+google-services = "4.4.1"
+hilt = "2.51.1"
+ksp = "1.9.10-1.0.13"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
@@ -31,3 +34,6 @@ androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-mani
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
