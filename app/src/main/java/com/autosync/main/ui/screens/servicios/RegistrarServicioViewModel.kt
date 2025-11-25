@@ -2,15 +2,16 @@ package com.autosync.main.ui.screens.servicios
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.local.dao.VehicleDao
-import com.autosync.main.data.local.entities.Servicio
+import com.autosync.main.data.local.model.Service
 import com.autosync.main.data.local.model.Vehicle
-import com.autosync.main.data.repository.ServicioRepository
+import com.autosync.main.data.repository.ServiceRepository
+import com.autosync.main.data.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 data class RegistrarServicioState(
@@ -18,13 +19,13 @@ data class RegistrarServicioState(
     val selectedVehicleId: Int? = null,
     val selectedVehicleName: String? = null,
     val tipoServicio: String = "",
-    val otroServicio: String = "",
-    val categoria: String = "",
+    val otroServicio: String = "", // ¡Añadido!
     val taller: String = "",
     val fecha: Long = System.currentTimeMillis(),
     val costo: String = "",
     val descripcion: String = "",
     val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
     val errorMessage: String? = null,
     val tiposServicio: List<String> = listOf(
         "Cambio de aceite",
@@ -33,28 +34,19 @@ data class RegistrarServicioState(
         "Sistema eléctrico",
         "Aire acondicionado",
         "Cambio de filtros"
-    ),
-    val categorias: List<String> = listOf(
-        "Motor",
-        "Frenos",
-        "Sistema eléctrico",
-        "Aire acondicionado",
-        "Transmisión",
-        "Suspensión"
     )
 ) {
     val isValid: Boolean
         get() = selectedVehicleId != null &&
                 tipoServicio.isNotBlank() &&
                 (tipoServicio != "Otro" || otroServicio.isNotBlank()) &&
-                categoria.isNotBlank() &&
                 taller.isNotBlank()
 }
 
 @HiltViewModel
 class RegistrarServicioViewModel @Inject constructor(
-    private val servicioRepository: ServicioRepository,
-    private val vehicleDao: VehicleDao
+    private val serviceRepository: ServiceRepository,
+    private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(RegistrarServicioState())
@@ -66,7 +58,7 @@ class RegistrarServicioViewModel @Inject constructor(
 
     private fun loadVehicles() {
         viewModelScope.launch {
-            vehicleDao.getVehicles().collect { vehicles ->
+            vehicleRepository.getVehicles().collect { vehicles ->
                 _state.value = _state.value.copy(vehicles = vehicles)
             }
         }
@@ -86,12 +78,8 @@ class RegistrarServicioViewModel @Inject constructor(
         )
     }
 
-    fun onOtroServicioChange(value: String) {
+    fun onOtroServicioChange(value: String) { // ¡Añadido!
         _state.value = _state.value.copy(otroServicio = value)
-    }
-
-    fun onCategoriaChange(categoria: String) {
-        _state.value = _state.value.copy(categoria = categoria)
     }
 
     fun onTallerChange(taller: String) {
@@ -103,7 +91,6 @@ class RegistrarServicioViewModel @Inject constructor(
     }
 
     fun onCostoChange(costo: String) {
-
         val filtered = costo.filter { it.isDigit() || it == '.' }
         _state.value = _state.value.copy(costo = filtered)
     }
@@ -115,33 +102,30 @@ class RegistrarServicioViewModel @Inject constructor(
     fun registrarServicio() {
         viewModelScope.launch {
             if (!_state.value.isValid) {
-                _state.value = _state.value.copy(
-                    errorMessage = "Por favor completa todos los campos requeridos"
-                )
+                _state.value = _state.value.copy(errorMessage = "Por favor completa todos los campos requeridos")
                 return@launch
             }
 
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
 
             try {
-                val tipoFinal = if (_state.value.tipoServicio == "Otro") {
+                val tipoFinal = if (_state.value.tipoServicio == "Otro") { // ¡Corregido!
                     _state.value.otroServicio
                 } else {
                     _state.value.tipoServicio
                 }
 
-                val servicio = Servicio(
+                val service = Service(
                     vehicleId = _state.value.selectedVehicleId!!,
-                    tipoServicio = tipoFinal,
-                    categoria = _state.value.categoria,
-                    taller = _state.value.taller,
-                    fecha = _state.value.fecha,
-                    descripcion = _state.value.descripcion,
-                    costo = _state.value.costo.toDoubleOrNull() ?: 0.0
+                    serviceType = tipoFinal,
+                    workshop = _state.value.taller,
+                    date = Date(_state.value.fecha),
+                    description = _state.value.descripcion,
+                    cost = _state.value.costo.toDoubleOrNull()
                 )
 
-                servicioRepository.insertServicio(servicio)
-                _state.value = _state.value.copy(isLoading = false)
+                serviceRepository.insertService(service)
+                _state.value = _state.value.copy(isLoading = false, isSuccess = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isLoading = false,

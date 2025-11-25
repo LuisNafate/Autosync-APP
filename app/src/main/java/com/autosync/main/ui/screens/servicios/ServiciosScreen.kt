@@ -1,28 +1,52 @@
 package com.autosync.main.ui.screens.servicios
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.autosync.main.data.local.entities.Servicio
+import com.autosync.main.data.local.model.Service
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,42 +54,7 @@ fun ServiciosScreen(
     onNavigateToRegistrarServicio: () -> Unit,
     viewModel: ServiciosViewModel = hiltViewModel()
 ) {
-    val servicios by viewModel.servicios.collectAsState()
-    val vehicles by viewModel.vehicles.collectAsState()
-
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var servicioToDelete by remember { mutableStateOf<Servicio?>(null) }
-
-    if (showDeleteDialog && servicioToDelete != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showDeleteDialog = false
-                servicioToDelete = null
-            },
-            title = { Text("Confirmar eliminación") },
-            text = { Text("¿Estás seguro de que quieres eliminar este servicio?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        servicioToDelete?.let { viewModel.deleteServicio(it) }
-                        showDeleteDialog = false
-                        servicioToDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                ) {
-                    Text("Eliminar", color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDeleteDialog = false
-                    servicioToDelete = null
-                }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
+    val state by viewModel.state.collectAsState()
 
     Scaffold(
         topBar = {
@@ -94,7 +83,11 @@ fun ServiciosScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            if (servicios.isEmpty()) {
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (state.services.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -122,15 +115,12 @@ fun ServiciosScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(servicios) { servicio ->
-                        val vehicle = vehicles.find { it.id == servicio.vehicleId }
+                    items(state.services) { service ->
+                        val vehicle = state.vehicles.find { it.id == service.vehicleId }
                         ServicioCard(
-                            servicio = servicio,
+                            service = service,
                             vehicleName = vehicle?.let { "${it.make} ${it.model}" } ?: "Vehículo desconocido",
-                            onDeleteClick = {
-                                servicioToDelete = servicio
-                                showDeleteDialog = true
-                            }
+                            onDeleteClick = { /* Lógica de borrado comentada */ }
                         )
                     }
                 }
@@ -141,7 +131,7 @@ fun ServiciosScreen(
 
 @Composable
 fun ServicioCard(
-    servicio: Servicio,
+    service: Service,
     vehicleName: String,
     onDeleteClick: () -> Unit
 ) {
@@ -168,11 +158,11 @@ fun ServicioCard(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(getCategoriaColor(servicio.categoria)),
+                            .background(Color.DarkGray), // Color genérico
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            getCategoriaIcon(servicio.categoria),
+                            Icons.Default.Build, // Icono genérico
                             contentDescription = null,
                             tint = Color.White
                         )
@@ -180,7 +170,7 @@ fun ServicioCard(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            servicio.tipoServicio,
+                            service.serviceType,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White
@@ -192,13 +182,6 @@ fun ServicioCard(
                         )
                     }
                 }
-                IconButton(onClick = onDeleteClick) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar",
-                        tint = Color.Gray
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -209,11 +192,11 @@ fun ServicioCard(
             ) {
                 InfoItem(
                     icon = Icons.Default.DateRange,
-                    text = dateFormat.format(Date(servicio.fecha))
+                    text = dateFormat.format(service.date)
                 )
                 InfoItem(
                     icon = Icons.Default.Build,
-                    text = servicio.taller
+                    text = service.workshop
                 )
             }
 
@@ -223,13 +206,9 @@ fun ServicioCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                InfoItem(
-                    icon = Icons.Default.Settings,
-                    text = servicio.categoria
-                )
-                if (servicio.costo > 0) {
+                if (service.cost != null && service.cost > 0) {
                     Text(
-                        currencyFormat.format(servicio.costo),
+                        currencyFormat.format(service.cost),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.primary
@@ -237,10 +216,10 @@ fun ServicioCard(
                 }
             }
 
-            if (servicio.descripcion.isNotBlank()) {
+            if (service.description.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    servicio.descripcion,
+                    service.description,
                     fontSize = 14.sp,
                     color = Color.Gray,
                     lineHeight = 18.sp
@@ -251,7 +230,7 @@ fun ServicioCard(
 }
 
 @Composable
-fun InfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+fun InfoItem(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
             icon,
@@ -268,22 +247,4 @@ fun InfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String
     }
 }
 
-fun getCategoriaIcon(categoria: String): androidx.compose.ui.graphics.vector.ImageVector {
-    return when (categoria.lowercase()) {
-        "motor" -> Icons.Default.Settings
-        "frenos" -> Icons.Default.Warning
-        "sistema eléctrico" -> Icons.Default.Build
-        "aire acondicionado" -> Icons.Default.Info
-        else -> Icons.Default.Build
-    }
-}
-
-fun getCategoriaColor(categoria: String): Color {
-    return when (categoria.lowercase()) {
-        "motor" -> Color(0xFF3B82F6)
-        "frenos" -> Color(0xFFEF4444)
-        "sistema eléctrico" -> Color(0xFFF59E0B)
-        "aire acondicionado" -> Color(0xFF10B981)
-        else -> Color(0xFF6366F1)
-    }
-}
+// Este comentario es para forzar al compilador a que re-evalúe el archivo.
