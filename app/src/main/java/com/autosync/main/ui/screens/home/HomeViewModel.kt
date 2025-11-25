@@ -1,7 +1,9 @@
 package com.autosync.main.ui.screens.home
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.local.UserDatabase
 import com.autosync.main.data.repository.User
 import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -15,15 +17,17 @@ data class HomeState(
     val isLoading: Boolean = true
 )
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state.asStateFlow()
 
-    private val userRepository = UserRepository()
+    private val userRepository: UserRepository
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     init {
+        val userDao = UserDatabase.getDatabase(application).userDao()
+        userRepository = UserRepository(userDao)
         loadCurrentUser()
     }
 

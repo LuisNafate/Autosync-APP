@@ -1,7 +1,9 @@
 package com.autosync.main.ui.screens.registro
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.local.UserDatabase
 import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -28,12 +30,17 @@ data class RegistroState(
     val generalError: String? = null
 )
 
-class RegistroViewModel : ViewModel() {
+class RegistroViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(RegistroState())
     val state: StateFlow<RegistroState> = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
-    private val userRepository = UserRepository()
+    private val userRepository: UserRepository
+
+    init {
+        val userDao = UserDatabase.getDatabase(application).userDao()
+        userRepository = UserRepository(userDao)
+    }
 
     fun onNombreChange(nombre: String) {
         _state.value = _state.value.copy(nombre = nombre, nombreError = null)

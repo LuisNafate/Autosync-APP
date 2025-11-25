@@ -49,6 +49,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    userName: String,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -139,7 +140,7 @@ fun HomeScreen(
                             )
                         }
                         Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                        Text("Hola, ${it.nombre}", style = MaterialTheme.typography.titleLarge)
+                        Text("Hola, $userName", style = MaterialTheme.typography.titleLarge)
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))
