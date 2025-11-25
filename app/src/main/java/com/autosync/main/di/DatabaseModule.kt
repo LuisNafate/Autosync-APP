@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.autosync.main.data.local.AppDatabase
 import com.autosync.main.data.local.dao.ServiceDao
+import com.autosync.main.data.local.dao.ServicioDao
 import com.autosync.main.data.local.dao.VehicleDao
 import dagger.Module
 import dagger.Provides

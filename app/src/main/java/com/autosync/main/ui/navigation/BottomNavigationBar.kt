@@ -1,9 +1,9 @@
 package com.autosync.main.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
@@ -23,7 +23,7 @@ fun BottomNavigationBar(navController: NavController) {
             icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
             label = { Text("Inicio") },
             selected = currentRoute == "home",
-            onClick = { 
+            onClick = {
                 navController.navigate("home") {
                     popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
@@ -34,7 +34,7 @@ fun BottomNavigationBar(navController: NavController) {
             icon = { Icon(Icons.Default.List, contentDescription = "Vehículos") },
             label = { Text("Vehículos") },
             selected = currentRoute == "vehicles",
-            onClick = { 
+            onClick = {
                 navController.navigate("vehicles") {
                     popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
@@ -42,11 +42,14 @@ fun BottomNavigationBar(navController: NavController) {
             }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Person, contentDescription = "Servicios") },
+            icon = { Icon(Icons.Default.Build, contentDescription = "Servicios") },
             label = { Text("Servicios") },
-            selected = currentRoute == "services",
-            onClick = { 
-                // TODO: navController.navigate("services")
+            selected = currentRoute == "services" || currentRoute == "registrar_servicio",
+            onClick = {
+                navController.navigate("services") {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
             }
         )
     }
