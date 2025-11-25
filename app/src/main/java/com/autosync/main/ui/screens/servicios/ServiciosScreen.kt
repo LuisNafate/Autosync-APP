@@ -140,7 +140,6 @@ fun ServiciosScreen(
 }
 
 @Composable
-//screen
 fun ServicioCard(
     servicio: Servicio,
     vehicleName: String,
