@@ -4,10 +4,13 @@ import com.autosync.main.data.local.UserDao
 import com.autosync.main.data.local.UserEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
 data class User(val nombre: String = "", val email: String = "")
 
-class UserRepository(private val userDao: UserDao) {
+@Singleton
+class UserRepository @Inject constructor() {
 
     private val db = FirebaseFirestore.getInstance()
 

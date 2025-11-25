@@ -3,40 +3,47 @@ package com.autosync.main.ui.screens.home
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.local.UserDatabase
-import com.autosync.main.data.repository.User
-import com.autosync.main.data.repository.UserRepository
+import com.autosync.main.data.local.model.Vehicle
+import com.autosync.main.data.repository.VehicleRepository
 import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class HomeState(
-    val user: User? = null,
+    val user: com.autosync.main.data.local.model.User? = null,
+    val vehicles: List<Vehicle> = emptyList(),
     val isLoading: Boolean = true
 )
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val vehicleRepository: VehicleRepository
+) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeState())
-    val state: StateFlow<HomeState> = _state.asStateFlow()
-
-    private val userRepository: UserRepository
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    val state = _state.asStateFlow()
 
     init {
-        val userDao = UserDatabase.getDatabase(application).userDao()
-        userRepository = UserRepository(userDao)
-        loadCurrentUser()
+        loadData()
     }
 
-    private fun loadCurrentUser() {
+    private fun loadData() {
         viewModelScope.launch {
-            val firebaseUser = auth.currentUser
-            if (firebaseUser != null) {
-                val user = userRepository.obtenerUsuario(firebaseUser.uid)
-                _state.value = _state.value.copy(user = user, isLoading = false)
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+            val user = firebaseUser?.let {
+                com.autosync.main.data.local.model.User(
+                    uid = it.uid,
+                    nombre = it.displayName ?: "",
+                    email = it.email ?: ""
+                )
+            }
+            _state.value = _state.value.copy(user = user, isLoading = true)
+
+            vehicleRepository.getVehicles().collect {
+                _state.value = _state.value.copy(vehicles = it, isLoading = false)
             }
         }
     }
