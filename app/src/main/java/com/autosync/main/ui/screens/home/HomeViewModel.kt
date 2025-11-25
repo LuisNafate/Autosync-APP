@@ -1,6 +1,7 @@
 package com.autosync.main.ui.screens.home
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.repository.VehicleRepository

@@ -121,7 +121,7 @@ fun HomeScreen(
                             )
                         }
                         Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                        Text("Hola, ${it.nombre}", style = MaterialTheme.typography.titleLarge)
+                        Text("Hola, $userName", style = MaterialTheme.typography.titleLarge)
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))

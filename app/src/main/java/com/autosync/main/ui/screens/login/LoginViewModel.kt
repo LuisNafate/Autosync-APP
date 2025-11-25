@@ -1,7 +1,10 @@
 package com.autosync.main.ui.screens.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.local.UserDatabase
+import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -19,14 +22,21 @@ data class LoginState(
     val isLoginSuccessful: Boolean = false,
     val emailError: String? = null,
     val passwordError: String? = null,
-    val generalError: String? = null
+    val generalError: String? = null,
+    val userName: String = ""
 )
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
+    private val userRepository: UserRepository
+
+    init {
+        val userDao = UserDatabase.getDatabase(application).userDao()
+        userRepository = UserRepository(userDao)
+    }
 
     fun onEmailChange(email: String) {
         _state.value = _state.value.copy(email = email, emailError = null)
@@ -44,7 +54,6 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, generalError = null)
 
-            // Validations
             val emailError = if (state.value.email.isBlank()) "El email es requerido" else null
             val passwordError = if (state.value.password.isBlank()) "La contraseña es requerida" else null
 
@@ -58,11 +67,21 @@ class LoginViewModel : ViewModel() {
             }
 
             try {
-                auth.signInWithEmailAndPassword(state.value.email, state.value.password).await()
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    isLoginSuccessful = true
-                )
+                val result = auth.signInWithEmailAndPassword(state.value.email, state.value.password).await()
+                val firebaseUser = result.user
+                if (firebaseUser != null) {
+                    val user = userRepository.obtenerUsuario(firebaseUser.uid)
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        isLoginSuccessful = true,
+                        userName = user?.nombre ?: ""
+                    )
+                } else {
+                     _state.value = _state.value.copy(
+                        isLoading = false,
+                        generalError = "Error al obtener los datos del usuario."
+                    )
+                }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isLoading = false,
