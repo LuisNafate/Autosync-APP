@@ -46,7 +46,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.autosync.main.ui.components.CustomTextField
 import com.autosync.main.ui.icons.FacebookIcon
 import com.autosync.main.ui.icons.GoogleIcon
@@ -56,7 +56,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegistro: () -> Unit
 ) {
-    val viewModel: LoginViewModel = viewModel()
+    val viewModel: LoginViewModel = hiltViewModel() // ¡CORREGIDO!
     val state by viewModel.state.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
 
