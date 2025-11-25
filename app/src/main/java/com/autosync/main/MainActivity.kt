@@ -19,8 +19,6 @@ import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
 import com.autosync.main.ui.screens.login.LoginScreen
 import com.autosync.main.ui.screens.registro.RegistroScreen
-import com.autosync.main.ui.screens.servicios.RegistrarServicioScreen
-import com.autosync.main.ui.screens.servicios.ServiciosScreen
 import com.autosync.main.ui.screens.vehicles.VehiclesScreen
 import com.autosync.main.ui.theme.MainTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -75,51 +73,29 @@ fun AppNavigation() {
                             popUpTo("registro") { inclusive = true }
                         }
                     },
-                    onNavigateToLogin = {
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
+                    onNavigateToLogin = { navController.navigate("login") {
+                        popUpTo("login") { inclusive = true }
+                    } }
                 )
             }
             composable("home") {
-                HomeScreen(
-                    onNavigateToAddVehicle = {
-                        navController.navigate("vehicle_details")
-                    }
-                )
+                HomeScreen(onNavigateToAddVehicle = { navController.navigate("vehicle_details") })
             }
             composable(
                 route = "vehicle_details?vehicleId={vehicleId}",
-                arguments = listOf(navArgument("vehicleId") {
+                arguments = listOf(navArgument("vehicleId") { 
                     type = NavType.IntType
                     defaultValue = -1
                 })
             ) {
-                AddVehicleScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                AddVehicleScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable("vehicles") {
                 VehiclesScreen(
-                    onNavigateToAddVehicle = {
-                        navController.navigate("vehicle_details")
-                    },
+                    onNavigateToAddVehicle = { navController.navigate("vehicle_details") },
                     onNavigateToEditVehicle = { vehicleId ->
                         navController.navigate("vehicle_details?vehicleId=$vehicleId")
                     }
-                )
-            }
-            composable("services") {
-                ServiciosScreen(
-                    onNavigateToRegistrarServicio = {
-                        navController.navigate("registrar_servicio")
-                    }
-                )
-            }
-            composable("registrar_servicio") {
-                RegistrarServicioScreen(
-                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
