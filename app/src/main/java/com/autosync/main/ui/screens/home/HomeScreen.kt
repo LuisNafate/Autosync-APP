@@ -62,7 +62,7 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Panel principal", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 actions = {
-                    val hasNotifications = false // TODO: Replace with actual notification state from ViewModel
+                    val hasNotifications = false // TODO: Replace si with actual notification state from ViewModel
                     Box(contentAlignment = Alignment.TopEnd) {
                         IconButton(onClick = { /* TODO: Notification action */ }) {
                             Box(
