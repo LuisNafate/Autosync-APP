@@ -2,14 +2,14 @@ package com.autosync.main.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
 data class LoginState(
     val email: String = "",
@@ -22,18 +22,21 @@ data class LoginState(
     val generalError: String? = null
 )
 
-class LoginViewModel : ViewModel() {
-    private val _state = MutableStateFlow(LoginState())
-    val state: StateFlow<LoginState> = _state.asStateFlow()
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val userRepository: UserRepository
+) : ViewModel() {
 
-    private val auth: FirebaseAuth = Firebase.auth
+    private val _state = MutableStateFlow(LoginState())
+    val state = _state.asStateFlow()
 
     fun onEmailChange(email: String) {
-        _state.value = _state.value.copy(email = email, emailError = null)
+        _state.value = _state.value.copy(email = email, emailError = null, generalError = null)
     }
 
     fun onPasswordChange(password: String) {
-        _state.value = _state.value.copy(password = password, passwordError = null)
+        _state.value = _state.value.copy(password = password, passwordError = null, generalError = null)
     }
 
     fun onRecordarmeChange(recordarme: Boolean) {
@@ -43,31 +46,18 @@ class LoginViewModel : ViewModel() {
     fun login() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, generalError = null)
-
-            // Validations
-            val emailError = if (state.value.email.isBlank()) "El email es requerido" else null
-            val passwordError = if (state.value.password.isBlank()) "La contraseña es requerida" else null
-
-            if (emailError != null || passwordError != null) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    emailError = emailError,
-                    passwordError = passwordError
-                )
-                return@launch
-            }
-
             try {
-                auth.signInWithEmailAndPassword(state.value.email, state.value.password).await()
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    isLoginSuccessful = true
-                )
+                val authResult = auth.signInWithEmailAndPassword(_state.value.email, _state.value.password).await()
+                val user = authResult.user
+                if (user != null) {
+                    // Sincronizamos los datos del usuario desde Firestore a Room
+                    userRepository.syncUser(user.uid)
+                    _state.value = _state.value.copy(isLoading = false, isLoginSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "Error desconocido durante el login.")
+                }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    generalError = "El email o la contraseña son incorrectos."
-                )
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
             }
         }
     }
