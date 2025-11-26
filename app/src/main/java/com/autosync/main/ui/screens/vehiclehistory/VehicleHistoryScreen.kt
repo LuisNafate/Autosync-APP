@@ -60,6 +60,7 @@ fun VehicleHistoryScreen(
 ) {
     val vehicle by viewModel.vehicle.collectAsState()
     val services by viewModel.services.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     
     val backgroundColor = Color(0xFF101C22)
     val accentColor = Color(0xFF10374A)
@@ -92,70 +93,117 @@ fun VehicleHistoryScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            if (vehicle == null) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp)
-                ) {
-                    // Card de información del vehículo mejorada
-                    VehicleInfoCardImproved(vehicle!!)
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    Text(
-                        "Historial de servicios",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = Color.White
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
+            when {
+                isLoading -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (services.isEmpty()) {
-                            item {
-                                Text(
-                                    "No hay servicios registrados",
-                                    color = Color.Gray
+                        CircularProgressIndicator(color = Color.White)
+                        Text(
+                            "Cargando historial...",
+                            color = Color.Gray,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+                vehicle == null -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            "No se encontró información del vehículo",
+                            color = Color.Gray,
+                            fontSize = 16.sp
+                        )
+                        Button(
+                            onClick = onNavigateBack,
+                            colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                        ) {
+                            Text("Volver")
+                        }
+                    }
+                }
+                else -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(20.dp)
+                    ) {
+                        // Card de información del vehículo mejorada
+                        VehicleInfoCardImproved(vehicle!!)
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Text(
+                            "Historial de servicios",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = Color.White
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            if (services.isEmpty()) {
+                                item {
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(32.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "No hay servicios registrados",
+                                                color = Color(0xFF9CA3AF),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            items(services) { service ->
+                                ServiceCardImproved(
+                                    service = service,
+                                    onViewInvoice = { onNavigateToInvoiceDetail(service.id) }
                                 )
                             }
                         }
-                        items(services) { service ->
-                            ServiceCardImproved(
-                                service = service,
-                                onViewInvoice = { onNavigateToInvoiceDetail(service.id) }
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
+                        // Botón mejorado para registrar nuevo servicio
+                        Button(
+                            onClick = { vehicle?.let { onNavigateToAddService(it.id) } },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(vertical = 14.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Agregar",
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Registrar Nuevo Servicio",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                color = Color.White
                             )
                         }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(20.dp))
-                    
-                    // Botón mejorado para registrar nuevo servicio
-                    Button(
-                        onClick = { vehicle?.let { onNavigateToAddService(it.id) } },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(vertical = 14.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Agregar",
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Registrar Nuevo Servicio",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = Color.White
-                        )
                     }
                 }
             }
