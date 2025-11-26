@@ -1,8 +1,10 @@
 package com.autosync.main.ui.screens.vehiclehistory
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,35 +55,63 @@ import java.util.Locale
 fun VehicleHistoryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddService: (Int) -> Unit,
+    onNavigateToInvoiceDetail: (Int) -> Unit = {},
     viewModel: VehicleHistoryViewModel = hiltViewModel()
 ) {
     val vehicle by viewModel.vehicle.collectAsState()
     val services by viewModel.services.collectAsState()
+    
+    val backgroundColor = Color(0xFF101C22)
+    val accentColor = Color(0xFF10374A)
 
     Scaffold(
+        containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text(vehicle?.let { "${it.make} (${it.licensePlate})" } ?: "Historial") },
+                title = { 
+                    Text(
+                        vehicle?.let { "${it.make}  (${it.licensePlate})" } ?: "Historial",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 20.sp,
+                        color = Color.White
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = backgroundColor
+                )
             )
         }
-    ) {
-        Box(modifier = Modifier.fillMaxSize().padding(it)) {
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             if (vehicle == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(20.dp)
                 ) {
-                    VehicleInfoCard(vehicle!!)
+                    // Card de información del vehículo mejorada
+                    VehicleInfoCardImproved(vehicle!!)
+                    
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text("Historial de servicios", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    
+                    Text(
+                        "Historial de servicios",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = Color.White
+                    )
+                    
                     Spacer(modifier = Modifier.height(16.dp))
 
                     LazyColumn(
@@ -87,25 +120,210 @@ fun VehicleHistoryScreen(
                     ) {
                         if (services.isEmpty()) {
                             item {
-                                Text("No hay servicios registrados", color = Color.Gray)
+                                Text(
+                                    "No hay servicios registrados",
+                                    color = Color.Gray
+                                )
                             }
                         }
                         items(services) { service ->
-                            ServiceListItem(service = service)
+                            ServiceCardImproved(
+                                service = service,
+                                onViewInvoice = { onNavigateToInvoiceDetail(service.id) }
+                            )
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     
+                    // Botón mejorado para registrar nuevo servicio
                     Button(
                         onClick = { vehicle?.let { onNavigateToAddService(it.id) } },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10374A))
+                        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(vertical = 14.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Registrar Nuevo Servicio", tint = Color.White)
-                        Text("Registrar Nuevo Servicio", color = Color.White)
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Agregar",
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Registrar Nuevo Servicio",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun VehicleInfoCardImproved(vehicle: Vehicle) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(23.dp)
+            ) {
+                Icon(
+                    Icons.Default.DirectionsCar,
+                    contentDescription = "Vehículo",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.White
+                )
+                
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "Marca: ${vehicle.make}",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        lineHeight = 19.2.sp
+                    )
+                    Text(
+                        "Modelo: ${vehicle.model}",
+                        fontSize = 14.sp,
+                        color = Color(0xFF9CA3AF),
+                        lineHeight = 16.8.sp
+                    )
+                    Text(
+                        "Año: ${vehicle.year}",
+                        fontSize = 14.sp,
+                        color = Color(0xFF9CA3AF),
+                        lineHeight = 16.8.sp
+                    )
+                }
+            }
+            
+            TextButton(
+                onClick = { /* TODO: Navigate to vehicle details */ },
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    "Ver Detalles del Vehículo",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = Color(0xFF3B82F6),
+                    lineHeight = 16.8.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ServiceCardImproved(
+    service: Service,
+    onViewInvoice: () -> Unit
+) {
+    val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(service.date)
+    val serviceIcon = if (service.serviceType.contains("aceite", ignoreCase = true)) {
+        Icons.Default.Build
+    } else {
+        Icons.Default.Settings
+    }
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(23.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFF10374A), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        serviceIcon,
+                        contentDescription = "Servicio",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        service.serviceType,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        lineHeight = 19.2.sp
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            "Taller: ${service.workshop}",
+                            fontSize = 14.sp,
+                            color = Color(0xFF9CA3AF),
+                            lineHeight = 16.8.sp
+                        )
+                        Text(
+                            "Fecha: $formattedDate",
+                            fontSize = 14.sp,
+                            color = Color(0xFF9CA3AF),
+                            lineHeight = 16.8.sp
+                        )
+                        Text(
+                            service.description,
+                            fontSize = 13.sp,
+                            color = Color(0xFFB0B0B0),
+                            lineHeight = 15.6.sp
+                        )
+                        service.cost?.let {
+                            Text(
+                                "Costo: $$it MXN",
+                                fontSize = 14.sp,
+                                color = Color(0xFF9CA3AF),
+                                lineHeight = 16.8.sp
+                            )
+                        }
+                    }
+                }
+            }
+            
+            TextButton(
+                onClick = onViewInvoice,
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    "Ver Factura",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = Color(0xFF3B82F6),
+                    lineHeight = 16.8.sp
+                )
             }
         }
     }

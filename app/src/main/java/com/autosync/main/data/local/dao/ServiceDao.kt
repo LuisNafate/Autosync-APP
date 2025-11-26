@@ -16,4 +16,7 @@ interface ServiceDao {
     @Query("SELECT * FROM services WHERE vehicleId = :vehicleId ORDER BY date DESC")
     fun getServicesForVehicle(vehicleId: Int): Flow<List<Service>>
 
+    @Query("SELECT * FROM services WHERE id = :serviceId")
+    fun getServiceById(serviceId: Int): Flow<Service?>
+
 }
