@@ -2,14 +2,16 @@ package com.autosync.main.ui.screens.registro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
 data class RegistroState(
     val nombre: String = "",
@@ -27,13 +29,15 @@ data class RegistroState(
     val generalError: String? = null
 )
 
-class RegistroViewModel : ViewModel() {
+@HiltViewModel
+class RegistroViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
 
     private val _state = MutableStateFlow(RegistroState())
     val state = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
-    private val firestore = Firebase.firestore
 
     fun onNombreChange(nombre: String) {
         _state.value = _state.value.copy(nombre = nombre, nombreError = null, generalError = null)
@@ -81,11 +85,7 @@ class RegistroViewModel : ViewModel() {
                 val authResult = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
                 val firebaseUser = authResult.user
                 if (firebaseUser != null) {
-                    val user = hashMapOf(
-                        "nombre" to _state.value.nombre,
-                        "email" to _state.value.email,
-                    )
-                    firestore.collection("users").document(firebaseUser.uid).set(user).await()
+                    userRepository.guardarUsuario(firebaseUser.uid, _state.value.nombre, _state.value.email)
                     _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
                 } else {
                     _state.value = _state.value.copy(isLoading = false, generalError = "No se pudo crear el usuario.")
