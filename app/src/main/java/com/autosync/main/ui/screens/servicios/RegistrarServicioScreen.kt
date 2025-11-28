@@ -1,5 +1,9 @@
 package com.autosync.main.ui.screens.servicios
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,11 +14,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.autosync.main.ui.components.CustomTextField
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,6 +38,19 @@ fun RegistrarServicioScreen(
     var isServicioDropdownExpanded by remember { mutableStateOf(false) }
     var isCategoriaDropdownExpanded by remember { mutableStateOf(false) }
     var isVehicleDropdownExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onNavigateBack()
+        }
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let { viewModel.onInvoiceImageSelected(it) }
+        }
+    )
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
@@ -183,8 +203,6 @@ fun RegistrarServicioScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
-
             Text("Taller", color = Color.White, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
             CustomTextField(
@@ -230,7 +248,6 @@ fun RegistrarServicioScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-
             Text("Detalles adicionales", color = Color.White, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
@@ -245,6 +262,59 @@ fun RegistrarServicioScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Nueva sección: Imagen de factura
+            Text("Imagen de factura (opcional)", color = Color.White, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (state.invoiceImageUri != null) {
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                ) {
+                    Box {
+                        Image(
+                            painter = rememberAsyncImagePainter(state.invoiceImageUri),
+                            contentDescription = "Imagen de factura",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        IconButton(
+                            onClick = { viewModel.onInvoiceImageRemoved() },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Eliminar imagen",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            OutlinedButton(
+                onClick = { imagePickerLauncher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(
+                    Icons.Default.Image,
+                    contentDescription = "Agregar imagen",
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    if (state.invoiceImageUri == null) "Agregar imagen de factura" else "Cambiar imagen",
+                    color = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
 
             if (state.errorMessage != null) {
                 Text(
@@ -254,11 +324,9 @@ fun RegistrarServicioScreen(
                 )
             }
 
-
             Button(
                 onClick = {
                     viewModel.registrarServicio()
-                    onNavigateBack()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state.isValid && !state.isLoading,

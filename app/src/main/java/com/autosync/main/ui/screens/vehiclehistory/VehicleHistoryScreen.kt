@@ -55,13 +55,14 @@ import java.util.Locale
 fun VehicleHistoryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddService: (Int) -> Unit,
+    onNavigateToRegistrarServicio: () -> Unit, // Nueva navegación
     onNavigateToInvoiceDetail: (Int) -> Unit = {},
     viewModel: VehicleHistoryViewModel = hiltViewModel()
 ) {
     val vehicle by viewModel.vehicle.collectAsState()
     val services by viewModel.services.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    
+
     val backgroundColor = Color(0xFF101C22)
     val accentColor = Color(0xFF10374A)
 
@@ -69,7 +70,7 @@ fun VehicleHistoryScreen(
         containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         vehicle?.let { "${it.make}  (${it.licensePlate})" } ?: "Historial",
                         fontWeight = FontWeight.SemiBold,
@@ -135,16 +136,16 @@ fun VehicleHistoryScreen(
                     ) {
                         // Card de información del vehículo mejorada
                         VehicleInfoCardImproved(vehicle!!)
-                        
+
                         Spacer(modifier = Modifier.height(24.dp))
-                        
+
                         Text(
                             "Historial de servicios",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                             color = Color.White
                         )
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
 
                         LazyColumn(
@@ -180,12 +181,12 @@ fun VehicleHistoryScreen(
                                 )
                             }
                         }
-                        
+
                         Spacer(modifier = Modifier.height(20.dp))
-                        
-                        // Botón mejorado para registrar nuevo servicio
+
+
                         Button(
-                            onClick = { vehicle?.let { onNavigateToAddService(it.id) } },
+                            onClick = onNavigateToRegistrarServicio,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                             shape = RoundedCornerShape(12.dp),
@@ -234,7 +235,7 @@ fun VehicleInfoCardImproved(vehicle: Vehicle) {
                     modifier = Modifier.size(32.dp),
                     tint = Color.White
                 )
-                
+
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -259,7 +260,7 @@ fun VehicleInfoCardImproved(vehicle: Vehicle) {
                     )
                 }
             }
-            
+
             TextButton(
                 onClick = { /* TODO: Navigate to vehicle details */ },
                 contentPadding = PaddingValues(0.dp)
@@ -316,7 +317,7 @@ fun ServiceCardImproved(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                
+
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -360,7 +361,7 @@ fun ServiceCardImproved(
                     }
                 }
             }
-            
+
             TextButton(
                 onClick = onViewInvoice,
                 contentPadding = PaddingValues(0.dp)
@@ -372,63 +373,6 @@ fun ServiceCardImproved(
                     color = Color(0xFF3B82F6),
                     lineHeight = 16.8.sp
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun VehicleInfoCard(vehicle: Vehicle) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.DirectionsCar, contentDescription = "Vehículo", modifier = Modifier.size(40.dp), tint = Color.White)
-            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-            Column {
-                Text("Marca: ${vehicle.make}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                Text("Modelo: ${vehicle.model}", fontSize = 16.sp, color = Color.Gray)
-                Text("Año: ${vehicle.year}", fontSize = 16.sp, color = Color.Gray)
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = { /* TODO: Navigate to edit vehicle */ }) {
-                Text("Ver Detalles", color = Color(0xFF3B82F6))
-            }
-        }
-    }
-}
-
-@Composable
-fun ServiceListItem(service: Service) {
-    val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(service.date)
-
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Icon(Icons.Default.Build, contentDescription = "Servicio", modifier = Modifier.size(40.dp), tint = Color.White)
-            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-            Column {
-                Text(service.serviceType, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                Text("Taller: ${service.workshop}", fontSize = 16.sp, color = Color.Gray)
-                Text("Fecha: $formattedDate", fontSize = 16.sp, color = Color.Gray)
-                Text(service.description, fontSize = 16.sp, color = Color.Gray)
-                service.cost?.let {
-                    Text("Costo: $${it} MXN", fontSize = 16.sp, color = Color.Gray)
-                }
-                TextButton(onClick = { /* TODO: View invoice */ }) {
-                    Text("Ver Factura", color = Color(0xFF3B82F6))
-                }
             }
         }
     }

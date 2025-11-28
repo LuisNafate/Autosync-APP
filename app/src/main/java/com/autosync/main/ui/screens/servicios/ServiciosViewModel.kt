@@ -7,11 +7,10 @@ import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.repository.ServiceRepository
 import com.autosync.main.data.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,37 +29,56 @@ class ServiciosViewModel @Inject constructor(
     private val _state = MutableStateFlow(ServiciosState())
     val state: StateFlow<ServiciosState> = _state.asStateFlow()
 
+    private var serviceCollectionJobs = mutableListOf<Job>()
+
     init {
         loadData()
     }
 
     private fun loadData() {
         viewModelScope.launch {
-            // Asumimos que quieres ver todos los servicios de todos los vehículos
-            // Esto tendrá que cambiar cuando implementemos la lógica de "servicio por vehículo"
-            // pero por ahora, para que compile, lo hacemos así.
-            // Si no hay un método getAllServices en el repo, lo añadimos.
-
-            // Este enfoque es incorrecto, lo correcto es obtener los servicios por vehículo.
-            // Por ahora, para que compile, dejaremos la lista de servicios vacía.
-            // La lógica real se implementará en la pantalla de historial de cada vehículo.
             vehicleRepository.getVehicles().collect { vehicles ->
+
+                serviceCollectionJobs.forEach { it.cancel() }
+                serviceCollectionJobs.clear()
+
                 _state.value = _state.value.copy(
                     vehicles = vehicles,
-                    services = emptyList(), // Dejamos esto vacío por ahora para que compile
-                    isLoading = false
+                    services = emptyList(),
+                    isLoading = true
                 )
+
+                if (vehicles.isEmpty()) {
+                    _state.value = _state.value.copy(isLoading = false)
+                    return@collect
+                }
+
+                val allServicesMap = mutableMapOf<Int, List<Service>>()
+
+                vehicles.forEach { vehicle ->
+                    val job = launch {
+                        serviceRepository.getServicesForVehicle(vehicle.id).collect { services ->
+                            allServicesMap[vehicle.id] = services
+
+                            val allServices = allServicesMap.values
+                                .flatten()
+                                .distinctBy { it.id }
+                                .sortedByDescending { it.date }
+
+                            _state.value = _state.value.copy(
+                                services = allServices,
+                                isLoading = false
+                            )
+                        }
+                    }
+                    serviceCollectionJobs.add(job)
+                }
             }
         }
     }
 
-    // La lógica de borrado necesitará ser repensada, 
-    // pero por ahora la comentamos para que no de errores de compilación.
-    /*
-    fun deleteServicio(service: Service) {
-        viewModelScope.launch {
-            serviceRepository.deleteService(service) // Suponiendo que exista un método deleteService
-        }
+    override fun onCleared() {
+        super.onCleared()
+        serviceCollectionJobs.forEach { it.cancel() }
     }
-    */
 }

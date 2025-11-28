@@ -126,6 +126,10 @@ fun AppNavigation() {
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToAddService = { vehicleId ->
                         navController.navigate("add_service/$vehicleId")
+                    },
+                    onNavigateToRegistrarServicio = {
+
+                        navController.navigate("registrar_servicio")
                     }
                 )
             }

@@ -1,5 +1,6 @@
 package com.autosync.main.ui.screens.servicios
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.model.Service
@@ -19,11 +20,12 @@ data class RegistrarServicioState(
     val selectedVehicleId: Int? = null,
     val selectedVehicleName: String? = null,
     val tipoServicio: String = "",
-    val otroServicio: String = "", // ¡Añadido!
+    val otroServicio: String = "",
     val taller: String = "",
     val fecha: Long = System.currentTimeMillis(),
     val costo: String = "",
     val descripcion: String = "",
+    val invoiceImageUri: Uri? = null,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
@@ -78,7 +80,7 @@ class RegistrarServicioViewModel @Inject constructor(
         )
     }
 
-    fun onOtroServicioChange(value: String) { // ¡Añadido!
+    fun onOtroServicioChange(value: String) {
         _state.value = _state.value.copy(otroServicio = value)
     }
 
@@ -99,6 +101,14 @@ class RegistrarServicioViewModel @Inject constructor(
         _state.value = _state.value.copy(descripcion = descripcion)
     }
 
+    fun onInvoiceImageSelected(uri: Uri) {
+        _state.value = _state.value.copy(invoiceImageUri = uri)
+    }
+
+    fun onInvoiceImageRemoved() {
+        _state.value = _state.value.copy(invoiceImageUri = null)
+    }
+
     fun registrarServicio() {
         viewModelScope.launch {
             if (!_state.value.isValid) {
@@ -109,7 +119,7 @@ class RegistrarServicioViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
 
             try {
-                val tipoFinal = if (_state.value.tipoServicio == "Otro") { // ¡Corregido!
+                val tipoFinal = if (_state.value.tipoServicio == "Otro") {
                     _state.value.otroServicio
                 } else {
                     _state.value.tipoServicio
@@ -121,7 +131,8 @@ class RegistrarServicioViewModel @Inject constructor(
                     workshop = _state.value.taller,
                     date = Date(_state.value.fecha),
                     description = _state.value.descripcion,
-                    cost = _state.value.costo.toDoubleOrNull()
+                    cost = _state.value.costo.toDoubleOrNull(),
+                    invoiceImageUri = _state.value.invoiceImageUri?.toString()
                 )
 
                 serviceRepository.insertService(service)

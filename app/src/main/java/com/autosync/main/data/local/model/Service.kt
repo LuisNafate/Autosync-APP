@@ -22,5 +22,6 @@ data class Service(
     val workshop: String,
     val date: Date,
     val description: String,
-    val cost: Double? = null
+    val cost: Double? = null,
+    val invoiceImageUri: String? = null
 )
