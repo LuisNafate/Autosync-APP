@@ -55,7 +55,7 @@ import java.util.Locale
 fun VehicleHistoryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddService: (Int) -> Unit,
-    onNavigateToRegistrarServicio: () -> Unit, // Nueva navegación
+    onNavigateToRegistrarServicio: () -> Unit,
     onNavigateToInvoiceDetail: (Int) -> Unit = {},
     viewModel: VehicleHistoryViewModel = hiltViewModel()
 ) {
