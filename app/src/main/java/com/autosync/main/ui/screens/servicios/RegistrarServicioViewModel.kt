@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.model.Service
 import com.autosync.main.data.local.model.Vehicle
+import com.autosync.main.data.repository.NotificationRepository
 import com.autosync.main.data.repository.ServiceRepository
 import com.autosync.main.data.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,7 +49,8 @@ data class RegistrarServicioState(
 @HiltViewModel
 class RegistrarServicioViewModel @Inject constructor(
     private val serviceRepository: ServiceRepository,
-    private val vehicleRepository: VehicleRepository
+    private val vehicleRepository: VehicleRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(RegistrarServicioState())
@@ -136,6 +138,14 @@ class RegistrarServicioViewModel @Inject constructor(
                 )
 
                 serviceRepository.insertService(service)
+
+                val vehicleName = _state.value.selectedVehicleName ?: "tu vehículo"
+                notificationRepository.createServiceRegisteredNotification(
+                    vehicleName = vehicleName,
+                    serviceType = tipoFinal,
+                    serviceId = service.id
+                )
+
                 _state.value = _state.value.copy(isLoading = false, isSuccess = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(

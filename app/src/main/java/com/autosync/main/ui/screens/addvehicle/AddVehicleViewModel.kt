@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.remote.nhtsa.dto.ModelDto
 import com.autosync.main.data.remote.repository.VehicleApiRepository
+import com.autosync.main.data.repository.NotificationRepository
 import com.autosync.main.data.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class AddVehicleViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
     private val vehicleApiRepository: VehicleApiRepository,
+    private val notificationRepository: NotificationRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -37,7 +39,7 @@ class AddVehicleViewModel @Inject constructor(
 
     init {
         editingVehicleId?.let {
-            if (it != -1) { // Hilt/Navigation passes -1 for missing optional args
+            if (it != -1) {
                 loadVehicle(it)
             }
         }
@@ -58,7 +60,7 @@ class AddVehicleViewModel @Inject constructor(
 
     fun onMarcaChange(value: String) {
         marca.value = value
-        if (value.length > 2) { // To avoid too many API calls
+        if (value.length > 2) {
             searchModels()
         }
     }
@@ -99,11 +101,18 @@ class AddVehicleViewModel @Inject constructor(
                 licensePlate = licensePlate.value,
                 imageUri = imageUri.value?.toString()
             )
+
             withContext(Dispatchers.IO) {
                 if (editingVehicleId != null && editingVehicleId != -1) {
                     vehicleRepository.updateVehicle(vehicle)
                 } else {
                     vehicleRepository.insertVehicle(vehicle)
+
+                    val vehicleName = "${marca.value} ${modelo.value}"
+                    notificationRepository.createVehicleRegisteredNotification(
+                        vehicleName = vehicleName,
+                        vehicleId = vehicle.id
+                    )
                 }
             }
         }

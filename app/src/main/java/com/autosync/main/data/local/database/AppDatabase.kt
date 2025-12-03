@@ -1,2 +1,1 @@
-package com.autosync.main.data.local.database
-
+package com.autosync.main.data.local

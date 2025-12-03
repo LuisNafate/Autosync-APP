@@ -3,8 +3,8 @@ package com.autosync.main.di
 import android.content.Context
 import androidx.room.Room
 import com.autosync.main.data.local.AppDatabase
+import com.autosync.main.data.local.dao.NotificationDao
 import com.autosync.main.data.local.dao.ServiceDao
-import com.autosync.main.data.local.dao.ServicioDao
 import com.autosync.main.data.local.dao.VehicleDao
 import dagger.Module
 import dagger.Provides
@@ -35,5 +35,10 @@ object DatabaseModule {
     @Provides
     fun provideServiceDao(appDatabase: AppDatabase): ServiceDao {
         return appDatabase.serviceDao()
+    }
+
+    @Provides
+    fun provideNotificationDao(appDatabase: AppDatabase): NotificationDao {
+        return appDatabase.notificationDao()
     }
 }
