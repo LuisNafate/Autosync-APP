@@ -1,5 +1,9 @@
 package com.autosync.main.ui.screens.home
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,18 +58,31 @@ import com.autosync.main.data.local.model.Vehicle
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToAddVehicle: () -> Unit
+    onNavigateToAddVehicle: () -> Unit,
+    onNavigateToNotifications: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Panel principal", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 actions = {
-                    val hasNotifications = false // TODO: Replace with actual notification state from ViewModel
                     Box(contentAlignment = Alignment.TopEnd) {
-                        IconButton(onClick = { /* TODO: Notification action */ }) {
+                        IconButton(onClick = onNavigateToNotifications) {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
@@ -72,17 +90,29 @@ fun HomeScreen(
                                     .background(Color.DarkGray.copy(alpha = 0.5f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White)
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = "Notificaciones",
+                                    tint = Color.White
+                                )
                             }
                         }
-                        if (hasNotifications) {
+                        if (state.unreadNotificationsCount > 0) {
                             Box(
                                 modifier = Modifier
-                                    .size(12.dp)
-                                    .offset(x = (-8).dp, y = (8).dp)
+                                    .size(18.dp)
+                                    .offset(x = (-6).dp, y = 6.dp)
                                     .clip(CircleShape)
-                                    .background(Color.Red)
-                            )
+                                    .background(Color.Red),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (state.unreadNotificationsCount > 9) "9+" else state.unreadNotificationsCount.toString(),
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 },
@@ -105,7 +135,7 @@ fun HomeScreen(
                 CircularProgressIndicator()
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    state.user?.let {
+                    state.user?.let { user ->
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
@@ -114,14 +144,14 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = it.nombre.firstOrNull()?.uppercase() ?: "U",
+                                text = user.nombre.firstOrNull()?.uppercase() ?: "U",
                                 color = Color.White,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                        Text("Hola, ${it.nombre}", style = MaterialTheme.typography.titleLarge)
+                        Text("Hola, ${user.nombre}", style = MaterialTheme.typography.titleLarge)
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))

@@ -21,6 +21,7 @@ import com.autosync.main.ui.screens.addservice.AddServiceScreen
 import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
 import com.autosync.main.ui.screens.login.LoginScreen
+import com.autosync.main.ui.screens.notifications.NotificationsScreen
 import com.autosync.main.ui.screens.registro.RegistroScreen
 import com.autosync.main.ui.screens.vehiclehistory.VehicleHistoryScreen
 import com.autosync.main.ui.screens.servicios.RegistrarServicioScreen
@@ -49,7 +50,7 @@ fun AppNavigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val routesWithoutBottomBar = setOf("login", "registro")
+    val routesWithoutBottomBar = setOf("login", "registro", "notifications")
 
     Scaffold(
         bottomBar = {
@@ -91,7 +92,15 @@ fun AppNavigation() {
                 HomeScreen(
                     onNavigateToAddVehicle = {
                         navController.navigate("vehicle_details")
+                    },
+                    onNavigateToNotifications = {
+                        navController.navigate("notifications")
                     }
+                )
+            }
+            composable("notifications") {
+                NotificationsScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable(
@@ -128,7 +137,6 @@ fun AppNavigation() {
                         navController.navigate("add_service/$vehicleId")
                     },
                     onNavigateToRegistrarServicio = {
-
                         navController.navigate("registrar_servicio")
                     }
                 )
