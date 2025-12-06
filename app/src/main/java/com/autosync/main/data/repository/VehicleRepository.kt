@@ -3,6 +3,7 @@ package com.autosync.main.data.repository
 import com.autosync.main.data.local.dao.VehicleDao
 import com.autosync.main.data.local.model.Vehicle
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObjects
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -13,6 +14,7 @@ interface VehicleRepository {
     suspend fun insertVehicle(vehicle: Vehicle)
     suspend fun updateVehicle(vehicle: Vehicle)
     suspend fun deleteVehicle(vehicle: Vehicle)
+    suspend fun syncVehicles(userId: String) // Añadido para la sincronización
 }
 
 class VehicleRepositoryImpl @Inject constructor(
@@ -37,5 +39,20 @@ class VehicleRepositoryImpl @Inject constructor(
     override suspend fun deleteVehicle(vehicle: Vehicle) {
         // TODO: Implementar la lógica de borrado en Firestore
         vehicleDao.deleteVehicle(vehicle)
+    }
+
+    override suspend fun syncVehicles(userId: String) {
+        try {
+            val remoteVehicles = firestore.collection("vehicles")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+                .toObjects<Vehicle>()
+
+            vehicleDao.deleteUserVehicles(userId)
+            vehicleDao.insertVehicles(remoteVehicles)
+        } catch (e: Exception) {
+            // Manejar error de red o de otro tipo
+        }
     }
 }
