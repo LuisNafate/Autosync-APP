@@ -9,6 +9,7 @@ import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.remote.nhtsa.dto.ModelDto
 import com.autosync.main.data.remote.repository.VehicleApiRepository
 import com.autosync.main.data.repository.VehicleRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class AddVehicleViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
     private val vehicleApiRepository: VehicleApiRepository,
+    private val auth: FirebaseAuth, // Inyectamos FirebaseAuth
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -90,6 +92,12 @@ class AddVehicleViewModel @Inject constructor(
     }
 
     fun saveVehicle() {
+        val currentUserId = auth.currentUser?.uid
+        if (currentUserId == null) {
+            // Opcional: manejar el error, por ahora simplemente no hacemos nada si no hay usuario
+            return
+        }
+
         viewModelScope.launch {
             val vehicle = Vehicle(
                 id = editingVehicleId ?: 0,
@@ -97,7 +105,8 @@ class AddVehicleViewModel @Inject constructor(
                 model = modelo.value,
                 year = year.value.toIntOrNull() ?: 0,
                 licensePlate = licensePlate.value,
-                imageUri = imageUri.value?.toString()
+                imageUri = imageUri.value?.toString(),
+                userId = currentUserId // ¡Añadido!
             )
             withContext(Dispatchers.IO) {
                 if (editingVehicleId != null && editingVehicleId != -1) {
