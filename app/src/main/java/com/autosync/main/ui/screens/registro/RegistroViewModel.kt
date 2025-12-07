@@ -2,7 +2,12 @@ package com.autosync.main.ui.screens.registro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+<<<<<<< Updated upstream
 import com.autosync.main.data.repository.UserRepository
+=======
+import com.autosync.main.data.model.Car
+import com.autosync.main.data.repository.CarRepository
+>>>>>>> Stashed changes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -38,6 +43,11 @@ class RegistroViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
+<<<<<<< Updated upstream
+=======
+    private val firestore = Firebase.firestore
+    private val carRepository = CarRepository()
+>>>>>>> Stashed changes
 
     fun onNombreChange(nombre: String) {
         _state.value = _state.value.copy(nombre = nombre, nombreError = null, generalError = null)
@@ -85,7 +95,26 @@ class RegistroViewModel @Inject constructor(
                 val authResult = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
                 val firebaseUser = authResult.user
                 if (firebaseUser != null) {
+<<<<<<< Updated upstream
                     userRepository.guardarUsuario(firebaseUser.uid, _state.value.nombre, _state.value.email)
+=======
+                    val user = hashMapOf(
+                        "nombre" to _state.value.nombre,
+                        "email" to _state.value.email,
+                    )
+                    firestore.collection("users").document(firebaseUser.uid).set(user).await()
+
+                    // Add a sample car for the new user
+                    val sampleCar = Car(
+                        userId = firebaseUser.uid,
+                        brand = "Toyota",
+                        model = "Corolla",
+                        plate = "AUT0123",
+                        year = 2023
+                    )
+                    carRepository.addCar(sampleCar)
+
+>>>>>>> Stashed changes
                     _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
                 } else {
                     _state.value = _state.value.copy(isLoading = false, generalError = "No se pudo crear el usuario.")
