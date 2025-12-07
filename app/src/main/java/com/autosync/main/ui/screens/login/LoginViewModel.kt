@@ -2,6 +2,7 @@ package com.autosync.main.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.repository.ServiceRepository
 import com.autosync.main.data.repository.UserRepository
 import com.autosync.main.data.repository.VehicleRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -27,7 +28,8 @@ data class LoginState(
 class LoginViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val userRepository: UserRepository,
-    private val vehicleRepository: VehicleRepository // Inyectamos el repositorio de vehículos
+    private val vehicleRepository: VehicleRepository,
+    private val serviceRepository: ServiceRepository // Injected ServiceRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -47,20 +49,19 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         viewModelScope.launch {
-            // ** THE FIX: Clear local data before starting a new session **
             vehicleRepository.clearLocalVehicles()
-            // You might want to do the same for the user repository if it has local caching
-            // userRepository.clearLocalUser()
+            // You might want to do the same for user and service repositories
 
             _state.value = _state.value.copy(isLoading = true, generalError = null)
             try {
                 val authResult = auth.signInWithEmailAndPassword(_state.value.email, _state.value.password).await()
                 val user = authResult.user
                 if (user != null) {
-                    // Sincronizamos los datos del usuario
+                    // Sync all data for the logged-in user
                     userRepository.syncUser(user.uid)
-                    // Sincronizamos los vehículos del usuario
                     vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid) // Added service sync
+
                     _state.value = _state.value.copy(isLoading = false, isLoginSuccessful = true)
                 } else {
                     _state.value = _state.value.copy(isLoading = false, generalError = "Error desconocido durante el login.")

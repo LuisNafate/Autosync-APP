@@ -8,7 +8,7 @@ import com.autosync.main.data.local.dao.VehicleDao
 import com.autosync.main.data.local.model.Service
 import com.autosync.main.data.local.model.Vehicle
 
-@Database(entities = [UserEntity::class, Vehicle::class, Service::class], version = 2, exportSchema = false)
+@Database(entities = [UserEntity::class, Vehicle::class, Service::class], version = 4, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class UserDatabase : RoomDatabase() {
 

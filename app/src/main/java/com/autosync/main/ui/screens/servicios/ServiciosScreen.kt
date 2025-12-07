@@ -216,10 +216,10 @@ fun ServicioCard(
                 }
             }
 
-            if (service.description.isNotBlank()) {
+            if (!service.details.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    service.description,
+                    service.details,
                     fontSize = 14.sp,
                     color = Color.Gray,
                     lineHeight = 18.sp

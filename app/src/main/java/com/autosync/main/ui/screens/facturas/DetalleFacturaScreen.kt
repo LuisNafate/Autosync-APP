@@ -238,7 +238,7 @@ fun DetalleFacturaScreen(
                                     lineHeight = 16.3.sp
                                 )
                                 Text(
-                                    serviceData.description,
+                                    serviceData.details ?: "",
                                     fontSize = 12.6.sp,
                                     color = Color(0xFFB0B0B0),
                                     lineHeight = 15.1.sp

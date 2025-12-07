@@ -344,7 +344,7 @@ fun ServiceCardImproved(
                             lineHeight = 16.8.sp
                         )
                         Text(
-                            service.description,
+                            service.details ?: "",
                             fontSize = 13.sp,
                             color = Color(0xFFB0B0B0),
                             lineHeight = 15.6.sp
@@ -422,7 +422,7 @@ fun ServiceListItem(service: Service) {
                 Text(service.serviceType, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                 Text("Taller: ${service.workshop}", fontSize = 16.sp, color = Color.Gray)
                 Text("Fecha: $formattedDate", fontSize = 16.sp, color = Color.Gray)
-                Text(service.description, fontSize = 16.sp, color = Color.Gray)
+                Text(service.details ?: "", fontSize = 16.sp, color = Color.Gray)
                 service.cost?.let {
                     Text("Costo: $${it} MXN", fontSize = 16.sp, color = Color.Gray)
                 }

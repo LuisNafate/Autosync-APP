@@ -109,18 +109,18 @@ class RegistrarServicioViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
 
             try {
-                val tipoFinal = if (_state.value.tipoServicio == "Otro") { // ¡Corregido!
-                    _state.value.otroServicio
-                } else {
-                    _state.value.tipoServicio
-                }
+                // Obtener el usuario del vehículo seleccionado
+                val selectedVehicle = _state.value.vehicles.find { it.id == _state.value.selectedVehicleId }
+                val userId = selectedVehicle?.userId ?: ""
 
                 val service = Service(
                     vehicleId = _state.value.selectedVehicleId!!,
-                    serviceType = tipoFinal,
+                    userId = userId,
+                    serviceType = _state.value.tipoServicio,
+                    customService = if (_state.value.tipoServicio == "Otro") _state.value.otroServicio else null,
                     workshop = _state.value.taller,
                     date = Date(_state.value.fecha),
-                    description = _state.value.descripcion,
+                    details = _state.value.descripcion,
                     cost = _state.value.costo.toDoubleOrNull()
                 )
 

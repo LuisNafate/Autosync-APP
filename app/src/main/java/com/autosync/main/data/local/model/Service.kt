@@ -17,10 +17,12 @@ import java.util.Date
 data class Service(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val vehicleId: Int,
-    val serviceType: String,
-    val workshop: String,
-    val date: Date,
-    val description: String,
+    val vehicleId: Int = 0,
+    val userId: String = "",
+    val serviceType: String = "",
+    val customService: String? = null,
+    val workshop: String = "",
+    val date: Date = Date(),
+    val details: String? = null,
     val cost: Double? = null
 )
