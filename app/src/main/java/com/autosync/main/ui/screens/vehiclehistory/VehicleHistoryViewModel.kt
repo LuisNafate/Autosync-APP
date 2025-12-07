@@ -79,6 +79,7 @@ class VehicleHistoryViewModel @Inject constructor(
             // Datos de ejemplo para desarrollo
             _vehicle.value = Vehicle(
                 id = 1,
+                userId = "mockUserId", // <-- THE FIX: Added a placeholder user ID
                 make = "Toyota",
                 model = "Corolla",
                 year = 2020,

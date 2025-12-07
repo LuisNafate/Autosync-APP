@@ -92,22 +92,34 @@ class AddVehicleViewModel @Inject constructor(
     }
 
     fun saveVehicle() {
+        // --- THE FIX --- 
+
+        // 1. Validate that there is a logged-in user
         val currentUserId = auth.currentUser?.uid
         if (currentUserId == null) {
-            // Opcional: manejar el error, por ahora simplemente no hacemos nada si no hay usuario
+            // Handle error: show a message to the user or log it. For now, just return.
+            return
+        }
+
+        // 2. Validate that required fields are not empty
+        if (marca.value.isBlank() || modelo.value.isBlank() || year.value.isBlank() || licensePlate.value.isBlank()) {
+            // Handle error: show a message that fields are required.
             return
         }
 
         viewModelScope.launch {
+            // 3. Build the Vehicle object with all required data
             val vehicle = Vehicle(
                 id = editingVehicleId ?: 0,
+                userId = currentUserId, // Assign the user ID
                 make = marca.value,
                 model = modelo.value,
-                year = year.value.toIntOrNull() ?: 0,
+                year = year.value.toIntOrNull() ?: 0, // Keep this logic, but now it's safer due to validation
                 licensePlate = licensePlate.value,
-                imageUri = imageUri.value?.toString(),
-                userId = currentUserId // ¡Añadido!
+                imageUri = imageUri.value?.toString()
             )
+            
+            // 4. Save to repository
             withContext(Dispatchers.IO) {
                 if (editingVehicleId != null && editingVehicleId != -1) {
                     vehicleRepository.updateVehicle(vehicle)

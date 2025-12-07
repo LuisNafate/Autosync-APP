@@ -14,7 +14,8 @@ interface VehicleRepository {
     suspend fun insertVehicle(vehicle: Vehicle)
     suspend fun updateVehicle(vehicle: Vehicle)
     suspend fun deleteVehicle(vehicle: Vehicle)
-    suspend fun syncVehicles(userId: String) // Añadido para la sincronización
+    suspend fun syncVehicles(userId: String)
+    suspend fun clearLocalVehicles() // New method to clear local data
 }
 
 class VehicleRepositoryImpl @Inject constructor(
@@ -25,9 +26,7 @@ class VehicleRepositoryImpl @Inject constructor(
     override suspend fun getVehicleById(id: Int): Vehicle? = vehicleDao.getVehicleById(id)
 
     override suspend fun insertVehicle(vehicle: Vehicle) {
-        // Primero, guardamos en Firestore. La colección se crea automáticamente.
         firestore.collection("vehicles").add(vehicle).await()
-        // Si lo anterior no lanza una excepción, guardamos en la base de datos local.
         vehicleDao.insertVehicle(vehicle)
     }
 
@@ -49,10 +48,15 @@ class VehicleRepositoryImpl @Inject constructor(
                 .await()
                 .toObjects<Vehicle>()
 
+            // Clear only the specific user's vehicles before syncing
             vehicleDao.deleteUserVehicles(userId)
             vehicleDao.insertVehicles(remoteVehicles)
         } catch (e: Exception) {
             // Manejar error de red o de otro tipo
         }
+    }
+
+    override suspend fun clearLocalVehicles() {
+        vehicleDao.clearAllVehicles()
     }
 }

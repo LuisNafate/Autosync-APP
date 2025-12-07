@@ -7,9 +7,10 @@ import androidx.room.PrimaryKey
 data class Vehicle(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val make: String,
-    val model: String,
-    val year: Int,
-    val licensePlate: String,
+    val userId: String = "",
+    val make: String = "",
+    val model: String = "",
+    val year: Int = 0,
+    val licensePlate: String = "",
     val imageUri: String? = null
 )

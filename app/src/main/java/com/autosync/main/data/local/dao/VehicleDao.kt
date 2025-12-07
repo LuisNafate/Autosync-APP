@@ -27,6 +27,9 @@ interface VehicleDao {
     @Query("DELETE FROM vehicles WHERE userId = :userId")
     suspend fun deleteUserVehicles(userId: String) // Añadido para la sincronización
 
+    @Query("DELETE FROM vehicles")
+    suspend fun clearAllVehicles() // New method to clear all data
+
     @Query("SELECT * FROM vehicles")
     fun getVehicles(): Flow<List<Vehicle>>
 

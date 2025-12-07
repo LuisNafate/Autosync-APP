@@ -9,34 +9,49 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface UserRepository {
+    suspend fun guardarUsuario(uid: String, nombre: String, email: String)
+    fun obtenerUsuario(uid: String): Flow<UserEntity?>
+    suspend fun syncUser(uid: String)
+}
+
 @Singleton
-class UserRepository @Inject constructor(
+class UserRepositoryImpl @Inject constructor(
     private val userDao: UserDao
-) {
+) : UserRepository {
 
     private val db = FirebaseFirestore.getInstance()
 
-    suspend fun guardarUsuario(uid: String, nombre: String, email: String) {
+    override suspend fun guardarUsuario(uid: String, nombre: String, email: String) {
         val user = UserEntity(uid, nombre, email)
         db.collection("users").document(uid).set(user).await()
         userDao.insertUser(user)
     }
 
-    fun obtenerUsuario(uid: String): Flow<UserEntity?> = flow {
-        // 1. Try to get user from local database (Room)
+    override fun obtenerUsuario(uid: String): Flow<UserEntity?> = flow {
         var user = userDao.getUser(uid)
         emit(user)
 
-        // 2. If not in Room, get from Firestore
         if (user == null) {
             val snapshot = db.collection("users").document(uid).get().await()
             user = snapshot.toObject(UserEntity::class.java)
 
-            // 3. Save to Room for future access
             user?.let {
                 userDao.insertUser(it)
-                emit(it) // Emit the user from Firestore
+                emit(it)
             }
+        }
+    }
+
+    override suspend fun syncUser(uid: String) {
+        try {
+            val snapshot = db.collection("users").document(uid).get().await()
+            val remoteUser = snapshot.toObject(UserEntity::class.java)
+            remoteUser?.let {
+                userDao.insertUser(it)
+            }
+        } catch (e: Exception) {
+            // Handle errors
         }
     }
 }

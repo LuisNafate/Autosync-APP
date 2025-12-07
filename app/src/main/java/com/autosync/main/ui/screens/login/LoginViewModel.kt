@@ -47,6 +47,11 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         viewModelScope.launch {
+            // ** THE FIX: Clear local data before starting a new session **
+            vehicleRepository.clearLocalVehicles()
+            // You might want to do the same for the user repository if it has local caching
+            // userRepository.clearLocalUser()
+
             _state.value = _state.value.copy(isLoading = true, generalError = null)
             try {
                 val authResult = auth.signInWithEmailAndPassword(_state.value.email, _state.value.password).await()
