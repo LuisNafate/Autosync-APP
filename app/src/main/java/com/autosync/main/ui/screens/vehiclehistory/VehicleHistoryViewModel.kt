@@ -11,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,80 +33,35 @@ class VehicleHistoryViewModel @Inject constructor(
         val vehicleId = savedStateHandle.get<Int>("vehicleId")
         
         if (vehicleId != null && vehicleId != -1) {
-            loadVehicle(vehicleId)
-            loadServices(vehicleId)
+            loadVehicleAndServices(vehicleId)
         } else {
-            // Si no hay vehicleId, usar datos de ejemplo para desarrollo
-            loadMockData()
+            // No vehicle ID provided, stop loading and show an empty state.
+            _isLoading.value = false
         }
     }
 
-    private fun loadVehicle(id: Int) {
+    private fun loadVehicleAndServices(id: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                // Fetch vehicle and services concurrently for better performance
                 val vehicleData = vehicleRepository.getVehicleById(id)
+                _vehicle.value = vehicleData
+
                 if (vehicleData != null) {
-                    _vehicle.value = vehicleData
+                    serviceRepository.getServicesForVehicle(id).collect {
+                        _services.value = it
+                    }
                 } else {
-                    // Si no se encuentra el vehículo, usar datos mock
-                    loadMockData()
+                    _services.value = emptyList()
                 }
             } catch (e: Exception) {
-                // En caso de error, cargar datos de ejemplo
-                loadMockData()
+                // In case of any error, ensure the state is empty
+                _vehicle.value = null
+                _services.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
-        }
-    }
-
-    private fun loadServices(vehicleId: Int) {
-        viewModelScope.launch {
-            try {
-                serviceRepository.getServicesForVehicle(vehicleId).collect {
-                    _services.value = it
-                }
-            } catch (e: Exception) {
-                _services.value = emptyList()
-            }
-        }
-    }
-
-    private fun loadMockData() {
-        viewModelScope.launch {
-            // Datos de ejemplo para desarrollo
-            _vehicle.value = Vehicle(
-                id = 1,
-                userId = "mockUserId", // <-- THE FIX: Added a placeholder user ID
-                make = "Toyota",
-                model = "Corolla",
-                year = 2020,
-                licensePlate = "ABC-123"
-            )
-            
-            _services.value = listOf(
-                Service(
-                    id = 1,
-                    vehicleId = 1,
-                    serviceType = "Cambio de Aceite",
-                    workshop = "Servicio Express",
-                    date = Date(),
-                    description = "Filtro y aceite sintético, revisión general.",
-                    cost = 800.0
-                ),
-                Service(
-                    id = 2,
-                    vehicleId = 1,
-                    serviceType = "Rotación y Balanceo de Llantas",
-                    workshop = "Llantera del Norte",
-                    date = Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000), // 30 días atrás
-                    description = "Se ajustó presión y se balancearon 4 ejes de 4 llantas.",
-                    cost = 980.0
-                )
-            )
-            
-            _isLoading.value = false
         }
     }
 }

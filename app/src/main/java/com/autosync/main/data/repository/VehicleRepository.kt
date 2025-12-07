@@ -15,44 +15,62 @@ interface VehicleRepository {
     suspend fun updateVehicle(vehicle: Vehicle)
     suspend fun deleteVehicle(vehicle: Vehicle)
     suspend fun syncVehicles(userId: String)
-    suspend fun clearLocalVehicles() // New method to clear local data
+    suspend fun clearLocalVehicles()
 }
 
 class VehicleRepositoryImpl @Inject constructor(
     private val vehicleDao: VehicleDao,
-    private val firestore: FirebaseFirestore // Inyectamos Firestore
+    private val firestore: FirebaseFirestore
 ) : VehicleRepository {
+
+    private val vehicleCollection = firestore.collection("vehicles")
+
     override fun getVehicles(): Flow<List<Vehicle>> = vehicleDao.getVehicles()
     override suspend fun getVehicleById(id: Int): Vehicle? = vehicleDao.getVehicleById(id)
 
     override suspend fun insertVehicle(vehicle: Vehicle) {
-        firestore.collection("vehicles").add(vehicle).await()
-        vehicleDao.insertVehicle(vehicle)
+        // 1. Insert into Room to get the auto-generated ID
+        val newId = vehicleDao.insertVehicle(vehicle)
+        
+        // 2. Create a copy of the vehicle with the correct ID
+        val vehicleWithId = vehicle.copy(id = newId.toInt())
+        
+        // 3. Save the complete object to Firestore, using the ID as the document key
+        try {
+            vehicleCollection.document(newId.toString()).set(vehicleWithId).await()
+        } catch (e: Exception) {
+            // If Firestore fails, roll back the local insert to maintain consistency
+            vehicleDao.deleteVehicle(vehicleWithId)
+            throw e // Re-throw the exception to notify the caller
+        }
     }
 
     override suspend fun updateVehicle(vehicle: Vehicle) {
-        // TODO: Implementar la lógica de actualización en Firestore
+        // Update in Firestore first
+        vehicleCollection.document(vehicle.id.toString()).set(vehicle).await()
+        // Then update in the local database
         vehicleDao.updateVehicle(vehicle)
     }
 
     override suspend fun deleteVehicle(vehicle: Vehicle) {
-        // TODO: Implementar la lógica de borrado en Firestore
+        // Delete from Firestore first
+        vehicleCollection.document(vehicle.id.toString()).delete().await()
+        // Then delete from the local database
         vehicleDao.deleteVehicle(vehicle)
     }
 
     override suspend fun syncVehicles(userId: String) {
         try {
-            val remoteVehicles = firestore.collection("vehicles")
+            val remoteVehicles = vehicleCollection
                 .whereEqualTo("userId", userId)
                 .get()
                 .await()
                 .toObjects<Vehicle>()
 
-            // Clear only the specific user's vehicles before syncing
             vehicleDao.deleteUserVehicles(userId)
             vehicleDao.insertVehicles(remoteVehicles)
         } catch (e: Exception) {
-            // Manejar error de red o de otro tipo
+            // Handle network or other errors
         }
     }
 

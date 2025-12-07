@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 interface VehicleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertVehicle(vehicle: Vehicle)
+    suspend fun insertVehicle(vehicle: Vehicle): Long // Modified to return the new ID
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVehicles(vehicles: List<Vehicle>) // Añadido para la sincronización

@@ -22,7 +22,7 @@ import javax.inject.Inject
 class AddVehicleViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
     private val vehicleApiRepository: VehicleApiRepository,
-    private val auth: FirebaseAuth, // Inyectamos FirebaseAuth
+    private val auth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -92,36 +92,31 @@ class AddVehicleViewModel @Inject constructor(
     }
 
     fun saveVehicle() {
-        // --- THE FIX --- 
-
-        // 1. Validate that there is a logged-in user
         val currentUserId = auth.currentUser?.uid
         if (currentUserId == null) {
-            // Handle error: show a message to the user or log it. For now, just return.
             return
         }
 
-        // 2. Validate that required fields are not empty
         if (marca.value.isBlank() || modelo.value.isBlank() || year.value.isBlank() || licensePlate.value.isBlank()) {
-            // Handle error: show a message that fields are required.
             return
         }
 
         viewModelScope.launch {
-            // 3. Build the Vehicle object with all required data
+            val isEditing = editingVehicleId != null && editingVehicleId != -1
+            val vehicleId = if (isEditing) editingVehicleId!! else 0
+
             val vehicle = Vehicle(
-                id = editingVehicleId ?: 0,
-                userId = currentUserId, // Assign the user ID
+                id = vehicleId,
+                userId = currentUserId,
                 make = marca.value,
                 model = modelo.value,
-                year = year.value.toIntOrNull() ?: 0, // Keep this logic, but now it's safer due to validation
+                year = year.value.toIntOrNull() ?: 0,
                 licensePlate = licensePlate.value,
                 imageUri = imageUri.value?.toString()
             )
             
-            // 4. Save to repository
             withContext(Dispatchers.IO) {
-                if (editingVehicleId != null && editingVehicleId != -1) {
+                if (isEditing) {
                     vehicleRepository.updateVehicle(vehicle)
                 } else {
                     vehicleRepository.insertVehicle(vehicle)
