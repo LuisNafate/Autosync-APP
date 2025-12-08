@@ -29,7 +29,8 @@ class LoginViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val userRepository: UserRepository,
     private val vehicleRepository: VehicleRepository,
-    private val serviceRepository: ServiceRepository
+    private val serviceRepository: ServiceRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -50,17 +51,25 @@ class LoginViewModel @Inject constructor(
     fun login() {
         viewModelScope.launch {
             vehicleRepository.clearLocalVehicles()
-            // You might want to do the same for user and service repositories
-
+            
             _state.value = _state.value.copy(isLoading = true, generalError = null)
             try {
                 val authResult = auth.signInWithEmailAndPassword(_state.value.email, _state.value.password).await()
                 val user = authResult.user
                 if (user != null) {
+                    // Guardar preferencia de "Recordarme" con expiración (30 días)
+                    val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                    if (_state.value.recordarme) {
+                        val expiryTime = System.currentTimeMillis() + (15L * 60 * 1000) // 15 minutos
+                        sharedPrefs.edit().putLong("session_expiry", expiryTime).apply()
+                    } else {
+                        sharedPrefs.edit().remove("session_expiry").apply()
+                    }
+
                     // Sync all data for the logged-in user
                     userRepository.syncUser(user.uid)
                     vehicleRepository.syncVehicles(user.uid)
-                    serviceRepository.syncServices(user.uid) // Added service sync
+                    serviceRepository.syncServices(user.uid)
 
                     _state.value = _state.value.copy(isLoading = false, isLoginSuccessful = true)
                 } else {

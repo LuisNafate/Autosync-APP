@@ -33,9 +33,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+        val sharedPrefs = getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+        val expiryTime = sharedPrefs.getLong("session_expiry", 0)
+        val currentTime = System.currentTimeMillis()
+        
+        // Sesión válida si hay usuario Y el tiempo de expiración es mayor al actual
+        val isValidSession = auth.currentUser != null && expiryTime > currentTime
+        val startDestination = if (isValidSession) "home" else "login"
+
         setContent {
             MainTheme {
-                AppNavigation()
+                AppNavigation(startDestination = startDestination)
             }
         }
     }
@@ -43,7 +53,7 @@ class MainActivity : ComponentActivity() {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AppNavigation() {
+fun AppNavigation(startDestination: String) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -59,7 +69,7 @@ fun AppNavigation() {
     ) {
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = startDestination,
             modifier = Modifier.padding(it)
         ) {
             composable("login") {
