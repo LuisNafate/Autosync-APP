@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,7 +74,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToAddVehicle: () -> Unit
+    onNavigateToAddVehicle: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var showNotificationDialog by remember { mutableStateOf(false) }
@@ -83,6 +85,13 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Panel principal", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            androidx.compose.material.icons.Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Cerrar Sesión",
+                            tint = Color.White
+                        )
+                    }
                     val hasNotifications = state.unreadCount > 0
                     Box(contentAlignment = Alignment.TopEnd) {
                         IconButton(onClick = { showNotificationDialog = true }) {

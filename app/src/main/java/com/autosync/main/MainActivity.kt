@@ -97,9 +97,23 @@ fun AppNavigation(startDestination: String) {
                 )
             }
             composable("home") {
+                val context = androidx.compose.ui.platform.LocalContext.current
                 HomeScreen(
                     onNavigateToAddVehicle = {
                         navController.navigate("vehicle_details")
+                    },
+                    onLogout = {
+                        // 1. Firebase SignOut
+                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                        
+                        // 2. Clear Prefs
+                        val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                        sharedPrefs.edit().clear().apply() // Or remove specific keys
+                        
+                        // 3. Navigate to Login
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }
