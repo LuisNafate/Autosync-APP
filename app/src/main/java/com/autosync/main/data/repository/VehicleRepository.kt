@@ -10,6 +10,7 @@ import javax.inject.Inject
 import com.autosync.main.data.local.model.Notification
 import java.util.Date
 
+
 interface VehicleRepository {
     fun getVehicles(): Flow<List<Vehicle>>
     suspend fun getVehicleById(id: Int): Vehicle?
@@ -20,6 +21,8 @@ interface VehicleRepository {
     suspend fun clearLocalVehicles()
     suspend fun deleteVehiclesForUser(userId: String)
 }
+
+
 
 class VehicleRepositoryImpl @Inject constructor(
     private val vehicleDao: VehicleDao,

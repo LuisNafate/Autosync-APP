@@ -27,6 +27,11 @@ import com.autosync.main.ui.screens.servicios.ServiciosScreen
 import com.autosync.main.ui.screens.vehicles.VehiclesScreen
 import com.autosync.main.ui.theme.MainTheme
 import dagger.hilt.android.AndroidEntryPoint
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -38,9 +43,25 @@ import kotlinx.coroutines.launch
 
     private val callbackManager = com.facebook.CallbackManager.Factory.create()
 
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        // Permission result handled
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
         
         val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
         val sharedPrefs = getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)

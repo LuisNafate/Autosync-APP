@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.autosync.main.notification.NotificationHelper
+
 interface NotificationRepository {
     suspend fun createNotification(notification: Notification)
     fun getUserNotifications(userId: String): Flow<List<Notification>>
@@ -17,7 +21,8 @@ interface NotificationRepository {
 }
 
 class NotificationRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    @ApplicationContext private val context: Context
 ) : NotificationRepository {
 
     private val collection = firestore.collection("notifications")
@@ -26,6 +31,7 @@ class NotificationRepositoryImpl @Inject constructor(
         val docRef = collection.document()
         val notifWithId = notification.copy(id = docRef.id)
         docRef.set(notifWithId).await()
+        NotificationHelper.showNotification(context, "AutoSync", notification.message)
     }
 
     override fun getUserNotifications(userId: String): Flow<List<Notification>> = callbackFlow {
