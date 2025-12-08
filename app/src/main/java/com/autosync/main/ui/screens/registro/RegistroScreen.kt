@@ -63,6 +63,7 @@ fun RegistroScreen(
     val state by viewModel.state.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     
@@ -104,6 +105,23 @@ fun RegistroScreen(
                // Handle error
             }
         }
+    }
+
+    if (showTermsDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showTermsDialog = false },
+            title = { Text(text = "Términos y Condiciones") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(text = com.autosync.main.util.TermsAndConditions.TEXT)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTermsDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 
     LaunchedEffect(state.isRegistroSuccessful) {
@@ -248,7 +266,7 @@ fun RegistroScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = state.aceptaTerminos, onCheckedChange = { viewModel.onAceptaTerminosChange(it) })
                 Text("Acepto los ", color = Color.White)
-                TextButton(onClick = { /* TODO */ }) {
+                TextButton(onClick = { showTermsDialog = true }) {
                     Text("Términos y Condiciones", color = Color(0xFF4A90B5))
                 }
             }
