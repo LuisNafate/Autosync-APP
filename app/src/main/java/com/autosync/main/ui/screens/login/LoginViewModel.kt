@@ -1,10 +1,10 @@
 package com.autosync.main.ui.screens.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.autosync.main.data.repository.ServiceRepository
+import com.autosync.main.data.local.UserDatabase
 import com.autosync.main.data.repository.UserRepository
-import com.autosync.main.data.repository.VehicleRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,20 +21,21 @@ data class LoginState(
     val isLoginSuccessful: Boolean = false,
     val emailError: String? = null,
     val passwordError: String? = null,
-    val generalError: String? = null
+    val generalError: String? = null,
+    val userName: String = ""
 )
 
-@HiltViewModel
-class LoginViewModel @Inject constructor(
-    private val auth: FirebaseAuth,
-    private val userRepository: UserRepository,
-    private val vehicleRepository: VehicleRepository,
-    private val serviceRepository: ServiceRepository,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
-) : ViewModel() {
-
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(LoginState())
-    val state = _state.asStateFlow()
+    val state: StateFlow<LoginState> = _state.asStateFlow()
+
+    private val auth: FirebaseAuth = Firebase.auth
+    private val userRepository: UserRepository
+
+    init {
+        val userDao = UserDatabase.getDatabase(application).userDao()
+        userRepository = UserRepository(userDao)
+    }
 
     fun onEmailChange(email: String) {
         _state.value = _state.value.copy(email = email, emailError = null, generalError = null)
@@ -71,12 +72,16 @@ class LoginViewModel @Inject constructor(
                     vehicleRepository.syncVehicles(user.uid)
                     serviceRepository.syncServices(user.uid)
 
-                    _state.value = _state.value.copy(isLoading = false, isLoginSuccessful = true)
-                } else {
-                    _state.value = _state.value.copy(isLoading = false, generalError = "Error desconocido durante el login.")
-                }
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
+            val emailError = if (state.value.email.isBlank()) "El email es requerido" else null
+            val passwordError = if (state.value.password.isBlank()) "La contraseña es requerida" else null
+
+            if (emailError != null || passwordError != null) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    emailError = emailError,
+                    passwordError = passwordError
+                )
+                return@launch
             }
         }
     }
@@ -164,8 +169,21 @@ class LoginViewModel @Inject constructor(
     fun resetPassword(email: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
-                auth.sendPasswordResetEmail(email).await()
-                onResult(true, null)
+                val result = auth.signInWithEmailAndPassword(state.value.email, state.value.password).await()
+                val firebaseUser = result.user
+                if (firebaseUser != null) {
+                    val user = userRepository.obtenerUsuario(firebaseUser.uid)
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        isLoginSuccessful = true,
+                        userName = user?.nombre ?: ""
+                    )
+                } else {
+                     _state.value = _state.value.copy(
+                        isLoading = false,
+                        generalError = "Error al obtener los datos del usuario."
+                    )
+                }
             } catch (e: Exception) {
                 onResult(false, e.message)
             }

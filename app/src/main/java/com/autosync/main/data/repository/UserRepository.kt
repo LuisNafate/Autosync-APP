@@ -30,46 +30,19 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun guardarUsuario(uid: String, nombre: String, email: String) {
         val user = UserEntity(uid, nombre, email)
         db.collection("users").document(uid).set(user).await()
-        userDao.insertUser(user)
+        userDao.insertUser(UserEntity(uid, nombre, email))
     }
 
-    override fun obtenerUsuario(uid: String): Flow<UserEntity?> = flow {
-        var user = userDao.getUser(uid)
-        emit(user)
-
-        if (user == null) {
-            val snapshot = db.collection("users").document(uid).get().await()
-            user = snapshot.toObject(UserEntity::class.java)
-
-            user?.let {
-                userDao.insertUser(it)
-                emit(it)
-            }
+    suspend fun obtenerUsuario(uid: String): User? {
+        val localUser = userDao.getUser(uid)
+        if (localUser != null) {
+            return User(localUser.nombre, localUser.email)
         }
-    }
 
-    override suspend fun syncUser(uid: String) {
-        try {
-            val snapshot = db.collection("users").document(uid).get().await()
-            val remoteUser = snapshot.toObject(UserEntity::class.java)
-            remoteUser?.let {
-                userDao.insertUser(it)
-            }
-        } catch (e: Exception) {
+        val remoteUser = db.collection("users").document(uid).get().await().toObject(User::class.java)
+        if (remoteUser != null) {
+            userDao.insertUser(UserEntity(uid, remoteUser.nombre, remoteUser.email))
         }
-    }
-
-    override suspend fun deleteUser(uid: String) {
-        vehicleRepository.deleteVehiclesForUser(uid)
-        
-        notificationRepository.deleteAllUserNotifications(uid)
-        
-        db.collection("users").document(uid).delete().await()
-        
-        userDao.deleteUser(UserEntity(uid, "", ""))
-    }
-
-    override suspend fun clearLocalUser() {
-        userDao.deleteAllUsers()
+        return remoteUser
     }
 }

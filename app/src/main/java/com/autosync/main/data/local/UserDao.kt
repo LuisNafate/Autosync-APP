@@ -12,10 +12,4 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE uid = :uid")
     suspend fun getUser(uid: String): UserEntity?
-
-    @androidx.room.Delete
-    suspend fun deleteUser(user: UserEntity)
-
-    @Query("DELETE FROM users")
-    suspend fun deleteAllUsers()
 }
