@@ -7,6 +7,10 @@ import com.google.firebase.firestore.toObjects
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import com.autosync.main.data.local.model.Notification
+import java.util.Date
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 interface ServiceRepository {
     fun getServicesForVehicle(vehicleId: Int): Flow<List<Service>>
@@ -20,7 +24,8 @@ interface ServiceRepository {
 
 class ServiceRepositoryImpl @Inject constructor(
     private val serviceDao: ServiceDao,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val notificationRepository: NotificationRepository
 ) : ServiceRepository {
 
     private val serviceCollection = firestore.collection("services")
@@ -34,6 +39,28 @@ class ServiceRepositoryImpl @Inject constructor(
         val serviceWithId = service.copy(id = newId.toInt())
         try {
             serviceCollection.document(newId.toString()).set(serviceWithId).await()
+            
+            // Trigger Notification
+            if (service.userId.isNotEmpty()) {
+                val nextDateMsg = service.nextServiceDate?.let {
+                     val fmt = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                     ", recordatorio el día ${fmt.format(it)}"
+                } ?: ""
+                
+                val notification = Notification(
+                    userId = service.userId,
+                    message = "Nuevo servicio registrado$nextDateMsg",
+                    type = "SERVICE",
+                    relatedId = newId.toString(),
+                    date = Date()
+                )
+                 try {
+                    notificationRepository.createNotification(notification)
+                } catch (e: Exception) {
+                    // Ignore notification errors to not block flow
+                }
+            }
+
         } catch (e: Exception) {
             serviceDao.deleteService(serviceWithId)
             throw e

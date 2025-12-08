@@ -6,6 +6,8 @@ import com.autosync.main.data.local.UserEntity
 import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.repository.UserRepository
 import com.autosync.main.data.repository.VehicleRepository
+import com.autosync.main.data.repository.NotificationRepository
+import com.autosync.main.data.local.model.Notification
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,13 +19,16 @@ import javax.inject.Inject
 data class HomeState(
     val user: UserEntity? = null,
     val vehicles: List<Vehicle> = emptyList(),
+    val notifications: List<Notification> = emptyList(),
+    val unreadCount: Int = 0,
     val isLoading: Boolean = true
 )
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val vehicleRepository: VehicleRepository
+    private val vehicleRepository: VehicleRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeState())
@@ -45,6 +50,25 @@ class HomeViewModel @Inject constructor(
             vehicleRepository.getVehicles().collect {
                 _state.value = _state.value.copy(vehicles = it, isLoading = false)
             }
+        }
+        
+        viewModelScope.launch {
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+             firebaseUser?.uid?.let { uid ->
+                notificationRepository.getUserNotifications(uid).collect { notifications ->
+                    val unread = notifications.count { !it.read }
+                    _state.value = _state.value.copy(
+                        notifications = notifications,
+                        unreadCount = unread
+                    )
+                }
+            }
+        }
+    }
+    
+    fun markAsRead(notificationId: String) {
+        viewModelScope.launch {
+            notificationRepository.markAsRead(notificationId)
         }
     }
 }

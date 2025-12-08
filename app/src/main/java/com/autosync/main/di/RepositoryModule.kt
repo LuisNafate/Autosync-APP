@@ -6,6 +6,8 @@ import com.autosync.main.data.repository.UserRepository
 import com.autosync.main.data.repository.UserRepositoryImpl
 import com.autosync.main.data.repository.VehicleRepository
 import com.autosync.main.data.repository.VehicleRepositoryImpl
+import com.autosync.main.data.repository.NotificationRepository
+import com.autosync.main.data.repository.NotificationRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -27,4 +29,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindServiceRepository(impl: ServiceRepositoryImpl): ServiceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationRepository(impl: NotificationRepositoryImpl): NotificationRepository
 }

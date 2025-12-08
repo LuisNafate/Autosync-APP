@@ -7,6 +7,8 @@ import com.google.firebase.firestore.toObjects
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import com.autosync.main.data.local.model.Notification
+import java.util.Date
 
 interface VehicleRepository {
     fun getVehicles(): Flow<List<Vehicle>>
@@ -20,7 +22,8 @@ interface VehicleRepository {
 
 class VehicleRepositoryImpl @Inject constructor(
     private val vehicleDao: VehicleDao,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val notificationRepository: NotificationRepository
 ) : VehicleRepository {
 
     private val vehicleCollection = firestore.collection("vehicles")
@@ -38,6 +41,23 @@ class VehicleRepositoryImpl @Inject constructor(
         // 3. Save the complete object to Firestore, using the ID as the document key
         try {
             vehicleCollection.document(newId.toString()).set(vehicleWithId).await()
+            
+            // Trigger Notification
+            if (vehicle.userId.isNotEmpty()) {
+                val notification = Notification(
+                    userId = vehicle.userId,
+                    message = "Nuevo vehículo registrado",
+                    type = "VEHICLE",
+                    relatedId = newId.toString(),
+                    date = Date()
+                )
+                try {
+                    notificationRepository.createNotification(notification)
+                } catch (e: Exception) {
+                    // Ignore notification errors to not block flow
+                }
+            }
+
         } catch (e: Exception) {
             // If Firestore fails, roll back the local insert to maintain consistency
             vehicleDao.deleteVehicle(vehicleWithId)

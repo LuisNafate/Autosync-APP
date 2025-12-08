@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +25,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
+import com.autosync.main.data.local.model.Notification
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Date
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,15 +68,16 @@ fun HomeScreen(
     onNavigateToAddVehicle: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    var showNotificationDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Panel principal", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 actions = {
-                    val hasNotifications = false // TODO: Replace with actual notification state from ViewModel
+                    val hasNotifications = state.unreadCount > 0
                     Box(contentAlignment = Alignment.TopEnd) {
-                        IconButton(onClick = { /* TODO: Notification action */ }) {
+                        IconButton(onClick = { showNotificationDialog = true }) {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
@@ -157,6 +170,98 @@ fun HomeScreen(
                 Text("Últimas facturas", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("No tienes facturas recientes", color = Color.Gray)
+            }
+        }
+    }
+
+
+    if (showNotificationDialog) {
+        Dialog(onDismissRequest = { showNotificationDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp)
+                    .padding(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Notificaciones",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White
+                        )
+                        IconButton(onClick = { showNotificationDialog = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.Gray)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    if (state.notifications.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No tienes notificaciones", color = Color.Gray)
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(state.notifications) { notification ->
+                                NotificationItem(
+                                    notification = notification,
+                                    onMarkAsRead = { viewModel.markAsRead(notification.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NotificationItem(
+    notification: Notification,
+    onMarkAsRead: () -> Unit
+) {
+    val dateStr = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(notification.date)
+    val bgColor = if (notification.read) Color(0xFF2D3748) else Color(0xFF10374A).copy(alpha = 0.3f)
+    
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onMarkAsRead() }
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+             Icon(
+                if (notification.type == "VEHICLE") Icons.Default.DirectionsCar else Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(notification.message, color = Color.White, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(dateStr, color = Color.Gray, fontSize = 12.sp)
+            }
+            if (!notification.read) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.Red)
+                )
             }
         }
     }
