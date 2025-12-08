@@ -56,12 +56,55 @@ import com.autosync.main.ui.icons.GoogleIcon
 @Composable
 fun RegistroScreen(
     onRegistroSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    callbackManager: com.facebook.CallbackManager
 ) {
     val viewModel: RegistroViewModel = hiltViewModel()
     val state by viewModel.state.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    // Facebook Callback
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val loginManager = com.facebook.login.LoginManager.getInstance()
+        loginManager.registerCallback(callbackManager, object : com.facebook.FacebookCallback<com.facebook.login.LoginResult> {
+            override fun onSuccess(result: com.facebook.login.LoginResult) {
+                viewModel.signInWithFacebook(result.accessToken)
+            }
+            override fun onCancel() {}
+            override fun onError(error: com.facebook.FacebookException) {
+                // Handle error
+            }
+        })
+        onDispose { }
+    }
+
+    // Google Launcher
+    val googleSignInClient = remember {
+        val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(com.autosync.main.R.string.default_web_client_id)) 
+            .requestEmail()
+            .build()
+        com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
+    }
+
+    val googleLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                account?.idToken?.let { token ->
+                    viewModel.signInWithGoogle(token)
+                }
+            } catch (e: com.google.android.gms.common.api.ApiException) {
+               // Handle error
+            }
+        }
+    }
 
     LaunchedEffect(state.isRegistroSuccessful) {
         if (state.isRegistroSuccessful) {
@@ -79,6 +122,7 @@ fun RegistroScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
+            // ... (rest of the UI, skipping unchanged parts until buttons)
             Spacer(modifier = Modifier.height(5.dp))
             Text(
                 text = "Crea una cuenta",
@@ -187,6 +231,14 @@ fun RegistroScreen(
                     isError = state.confirmPasswordError != null,
                     errorMessage = state.confirmPasswordError,
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password Icon") },
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
                 )
             }
@@ -239,12 +291,12 @@ fun RegistroScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
+           Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
                 OutlinedButton(
-                    onClick = { /* TODO: Google Login */ },
+                    onClick = { googleLauncher.launch(googleSignInClient.signInIntent) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
@@ -254,7 +306,12 @@ fun RegistroScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedButton(
-                    onClick = { /* TODO: Facebook Login */ },
+                    onClick = { 
+                        com.facebook.login.LoginManager.getInstance().logInWithReadPermissions(
+                            context as androidx.activity.ComponentActivity,
+                            listOf("email", "public_profile")
+                        )
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {

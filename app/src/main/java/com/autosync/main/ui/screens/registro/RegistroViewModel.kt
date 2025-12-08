@@ -33,7 +33,9 @@ data class RegistroState(
 @HiltViewModel
 class RegistroViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val vehicleRepository: VehicleRepository // Injected repository
+    private val vehicleRepository: VehicleRepository,
+    private val serviceRepository: com.autosync.main.data.repository.ServiceRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(RegistroState())
@@ -83,7 +85,9 @@ class RegistroViewModel @Inject constructor(
 
         viewModelScope.launch {
             // ** THE FIX: Clear local data before starting a new session **
+            userRepository.clearLocalUser()
             vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
 
             _state.value = _state.value.copy(isLoading = true, generalError = null)
             try {
@@ -94,6 +98,80 @@ class RegistroViewModel @Inject constructor(
                     _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
                 } else {
                     _state.value = _state.value.copy(isLoading = false, generalError = "No se pudo crear el usuario.")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
+            }
+        }
+    }
+
+    fun signInWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            userRepository.clearLocalUser()
+            vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
+
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
+            try {
+                val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+                val authResult = auth.signInWithCredential(credential).await()
+                val user = authResult.user
+                
+                if (user != null) {
+                    val name = user.displayName ?: "Usuario Google"
+                    val email = user.email ?: ""
+                    
+                    // Asegurar que exista en Firestore (si es nuevo registro via Google)
+                    userRepository.guardarUsuario(user.uid, name, email)
+                    
+                    val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                    // En registro asumimos sesión normal, o podríamos no setear expiry. 
+                    // Para consistencia con login, lo dejamos sin "recordarme" explicito o default.
+                    // Pero el usuario viene de registrarse, asi que logueamos.
+                    sharedPrefs.edit().remove("session_expiry").apply() 
+
+                    userRepository.syncUser(user.uid)
+                    vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid)
+
+                    _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "Error en Google Sign-In.")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
+            }
+        }
+    }
+
+    fun signInWithFacebook(accessToken: com.facebook.AccessToken) {
+        viewModelScope.launch {
+            userRepository.clearLocalUser()
+            vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
+
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
+            try {
+                val credential = com.google.firebase.auth.FacebookAuthProvider.getCredential(accessToken.token)
+                val authResult = auth.signInWithCredential(credential).await()
+                val user = authResult.user
+
+                if (user != null) {
+                    val name = user.displayName ?: "Usuario Facebook"
+                    val email = user.email ?: ""
+
+                    userRepository.guardarUsuario(user.uid, name, email)
+                    
+                    val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                    sharedPrefs.edit().remove("session_expiry").apply()
+                    
+                    userRepository.syncUser(user.uid)
+                    vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid)
+
+                    _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "Error en Facebook Sign-In.")
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, generalError = e.message)

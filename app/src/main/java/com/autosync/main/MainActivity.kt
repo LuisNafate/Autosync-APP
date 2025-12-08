@@ -120,7 +120,8 @@ fun AppNavigation(
                         navController.navigate("login") {
                             popUpTo("login") { inclusive = true }
                         }
-                    }
+                    },
+                    callbackManager = callbackManager
                 )
             }
             composable("home") {
