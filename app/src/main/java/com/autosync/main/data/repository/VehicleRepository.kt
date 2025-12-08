@@ -18,12 +18,14 @@ interface VehicleRepository {
     suspend fun deleteVehicle(vehicle: Vehicle)
     suspend fun syncVehicles(userId: String)
     suspend fun clearLocalVehicles()
+    suspend fun deleteVehiclesForUser(userId: String)
 }
 
 class VehicleRepositoryImpl @Inject constructor(
     private val vehicleDao: VehicleDao,
     private val firestore: FirebaseFirestore,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val serviceRepository: ServiceRepository
 ) : VehicleRepository {
 
     private val vehicleCollection = firestore.collection("vehicles")
@@ -73,7 +75,10 @@ class VehicleRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteVehicle(vehicle: Vehicle) {
-        // Delete from Firestore first
+        // Cascade delete services first
+        serviceRepository.deleteServicesForVehicle(vehicle.id)
+        
+        // Delete from Firestore
         vehicleCollection.document(vehicle.id.toString()).delete().await()
         // Then delete from the local database
         vehicleDao.deleteVehicle(vehicle)
@@ -96,5 +101,22 @@ class VehicleRepositoryImpl @Inject constructor(
 
     override suspend fun clearLocalVehicles() {
         vehicleDao.clearAllVehicles()
+    }
+
+    override suspend fun deleteVehiclesForUser(userId: String) {
+        // Get vehicles for user to get their IDs
+        val vehicles = vehicleCollection.whereEqualTo("userId", userId).get().await().toObjects(Vehicle::class.java)
+        
+        val batch = firestore.batch()
+        vehicles.forEach { vehicle ->
+            // Delete services for each vehicle
+            serviceRepository.deleteServicesForVehicle(vehicle.id)
+            // Delete vehicle from Firestore
+            batch.delete(vehicleCollection.document(vehicle.id.toString()))
+        }
+        batch.commit().await()
+        
+        // Delete from Room
+        vehicleDao.deleteUserVehicles(userId)
     }
 }

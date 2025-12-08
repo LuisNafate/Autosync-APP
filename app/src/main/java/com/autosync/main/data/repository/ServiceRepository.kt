@@ -20,6 +20,7 @@ interface ServiceRepository {
     suspend fun deleteService(service: Service)
     suspend fun syncServices(userId: String) // Added for synchronization
     fun getServicesForUser(userId: String): Flow<List<Service>>
+    suspend fun deleteServicesForVehicle(vehicleId: Int)
 }
 
 class ServiceRepositoryImpl @Inject constructor(
@@ -86,7 +87,7 @@ class ServiceRepositoryImpl @Inject constructor(
                 .toObjects<Service>()
             
             // This assumes you have a method in your DAO to clear and insert
-            serviceDao.clearUserServices(userId) // You may need to add this method
+            // serviceDao.clearUserServices(userId) // Removed to prevent disappearing items due to latency
             serviceDao.insertServices(remoteServices) // You may need to add this method
         } catch (e: Exception) {
             // Handle exceptions
@@ -95,4 +96,18 @@ class ServiceRepositoryImpl @Inject constructor(
 
 
     override fun getServicesForUser(userId: String): Flow<List<Service>> = serviceDao.getServicesForUser(userId)
+
+    override suspend fun deleteServicesForVehicle(vehicleId: Int) {
+         // Query Firestore for docs to delete
+        val snapshot = serviceCollection.whereEqualTo("vehicleId", vehicleId).get().await()
+        if (!snapshot.isEmpty) {
+            val batch = firestore.batch()
+            for (doc in snapshot.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+        }
+        // Delete from Room
+        serviceDao.deleteServicesForVehicle(vehicleId)
+    }
 }

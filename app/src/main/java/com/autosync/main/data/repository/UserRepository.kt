@@ -12,12 +12,16 @@ import javax.inject.Singleton
 interface UserRepository {
     suspend fun guardarUsuario(uid: String, nombre: String, email: String)
     fun obtenerUsuario(uid: String): Flow<UserEntity?>
+
     suspend fun syncUser(uid: String)
+    suspend fun deleteUser(uid: String)
 }
 
 @Singleton
 class UserRepositoryImpl @Inject constructor(
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val vehicleRepository: VehicleRepository,
+    private val notificationRepository: NotificationRepository
 ) : UserRepository {
 
     private val db = FirebaseFirestore.getInstance()
@@ -53,5 +57,19 @@ class UserRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             // Handle errors
         }
+    }
+
+    override suspend fun deleteUser(uid: String) {
+        // Cascade delete vehicles (which cascades services)
+        vehicleRepository.deleteVehiclesForUser(uid)
+        
+        // Delete notifications
+        notificationRepository.deleteAllUserNotifications(uid)
+        
+        // Delete user from Firestore
+        db.collection("users").document(uid).delete().await()
+        
+        // Delete user from Room
+        userDao.deleteUser(UserEntity(uid, "", "")) // Assuming DAO needs an entity to delete, or add clearUser(uid) query
     }
 }

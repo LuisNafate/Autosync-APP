@@ -13,6 +13,7 @@ interface NotificationRepository {
     suspend fun createNotification(notification: Notification)
     fun getUserNotifications(userId: String): Flow<List<Notification>>
     suspend fun markAsRead(notificationId: String)
+    suspend fun deleteAllUserNotifications(userId: String)
 }
 
 class NotificationRepositoryImpl @Inject constructor(
@@ -46,5 +47,16 @@ class NotificationRepositoryImpl @Inject constructor(
 
     override suspend fun markAsRead(notificationId: String) {
         collection.document(notificationId).update("read", true).await()
+    }
+
+    override suspend fun deleteAllUserNotifications(userId: String) {
+        val snapshot = collection.whereEqualTo("userId", userId).get().await()
+        if (!snapshot.isEmpty) {
+            val batch = firestore.batch()
+            for (doc in snapshot.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+        }
     }
 }

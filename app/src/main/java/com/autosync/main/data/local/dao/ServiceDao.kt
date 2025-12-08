@@ -27,6 +27,9 @@ interface ServiceDao {
     @Query("DELETE FROM services WHERE userId = :userId")
     suspend fun clearUserServices(userId: String) // For synchronization
 
+    @Query("DELETE FROM services WHERE vehicleId = :vehicleId")
+    suspend fun deleteServicesForVehicle(vehicleId: Int)
+
     @Query("SELECT * FROM services WHERE vehicleId = :vehicleId ORDER BY date DESC")
     fun getServicesForVehicle(vehicleId: Int): Flow<List<Service>>
 
