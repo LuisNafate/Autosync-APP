@@ -28,6 +28,7 @@ fun RegistrarServicioScreen(
     val state by viewModel.state.collectAsState()
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var showNextDatePicker by remember { mutableStateOf(false) }
     var isServicioDropdownExpanded by remember { mutableStateOf(false) }
     var isCategoriaDropdownExpanded by remember { mutableStateOf(false) }
     var isVehicleDropdownExpanded by remember { mutableStateOf(false) }
@@ -50,6 +51,32 @@ fun RegistrarServicioScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showNextDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = state.nextServiceDate ?: System.currentTimeMillis()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showNextDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        viewModel.onNextServiceDateChange(it)
+                    }
+                    showNextDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNextDatePicker = false }) {
                     Text("Cancelar")
                 }
             }
@@ -211,6 +238,26 @@ fun RegistrarServicioScreen(
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
                         Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Fecha Próximo Servicio
+            Text("Próximo Servicio", color = Color.White, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+            CustomTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showNextDatePicker = true },
+                value = state.nextServiceDate?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it)) } ?: "",
+                onValueChange = {},
+                label = "",
+                placeholder = "DD/MM/AAAA",
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showNextDatePicker = true }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha próximo servicio")
                     }
                 }
             )

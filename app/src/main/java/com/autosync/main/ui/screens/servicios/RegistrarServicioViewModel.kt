@@ -22,6 +22,7 @@ data class RegistrarServicioState(
     val otroServicio: String = "", // ¡Añadido!
     val taller: String = "",
     val fecha: Long = System.currentTimeMillis(),
+    val nextServiceDate: Long? = null,
     val costo: String = "",
     val descripcion: String = "",
     val isLoading: Boolean = false,
@@ -82,6 +83,10 @@ class RegistrarServicioViewModel @Inject constructor(
         _state.value = _state.value.copy(otroServicio = value)
     }
 
+    fun onNextServiceDateChange(date: Long?) {
+         _state.value = _state.value.copy(nextServiceDate = date)
+    }
+
     fun onTallerChange(taller: String) {
         _state.value = _state.value.copy(taller = taller)
     }
@@ -120,6 +125,7 @@ class RegistrarServicioViewModel @Inject constructor(
                     customService = if (_state.value.tipoServicio == "Otro") _state.value.otroServicio else null,
                     workshop = _state.value.taller,
                     date = Date(_state.value.fecha),
+                    nextServiceDate = _state.value.nextServiceDate?.let { Date(it) },
                     details = _state.value.descripcion,
                     cost = _state.value.costo.toDoubleOrNull()
                 )

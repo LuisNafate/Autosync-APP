@@ -24,5 +24,6 @@ data class Service(
     val workshop: String = "",
     val date: Date = Date(),
     val details: String? = null,
-    val cost: Double? = null
+    val cost: Double? = null,
+    val nextServiceDate: Date? = null
 )
