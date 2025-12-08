@@ -67,7 +67,6 @@ fun RegistroScreen(
 
     val context = androidx.compose.ui.platform.LocalContext.current
     
-    // Facebook Callback
     androidx.compose.runtime.DisposableEffect(Unit) {
         val loginManager = com.facebook.login.LoginManager.getInstance()
         loginManager.registerCallback(callbackManager, object : com.facebook.FacebookCallback<com.facebook.login.LoginResult> {
@@ -76,13 +75,11 @@ fun RegistroScreen(
             }
             override fun onCancel() {}
             override fun onError(error: com.facebook.FacebookException) {
-                // Handle error
             }
         })
         onDispose { }
     }
 
-    // Google Launcher
     val googleSignInClient = remember {
         val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(context.getString(com.autosync.main.R.string.default_web_client_id)) 
@@ -102,7 +99,7 @@ fun RegistroScreen(
                     viewModel.signInWithGoogle(token)
                 }
             } catch (e: com.google.android.gms.common.api.ApiException) {
-               // Handle error
+
             }
         }
     }
@@ -140,7 +137,6 @@ fun RegistroScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // ... (rest of the UI, skipping unchanged parts until buttons)
             Spacer(modifier = Modifier.height(5.dp))
             Text(
                 text = "Crea una cuenta",

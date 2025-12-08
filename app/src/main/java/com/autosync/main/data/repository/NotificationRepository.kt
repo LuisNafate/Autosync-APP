@@ -38,8 +38,6 @@ class NotificationRepositoryImpl @Inject constructor(
                     val sortedNotifications = notifications.sortedByDescending { it.date }
                     trySend(sortedNotifications)
                 } else {
-                    // Log error if needed, but safe to ignore for now or handle appropriately
-                    // if (error != null) { Log.e("NotificationRepo", "Error", error) }
                 }
             }
         awaitClose { subscription.remove() }

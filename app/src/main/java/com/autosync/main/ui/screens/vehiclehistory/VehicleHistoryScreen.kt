@@ -137,7 +137,6 @@ fun VehicleHistoryScreen(
                             .fillMaxSize()
                             .padding(20.dp)
                     ) {
-                        // Card de información del vehículo mejorada
                         VehicleInfoCardImproved(
                             vehicle = vehicle!!,
                             onViewDetails = { showVehicleDetailsDialog = true }
@@ -190,7 +189,6 @@ fun VehicleHistoryScreen(
                         
                         Spacer(modifier = Modifier.height(20.dp))
                         
-                        // Botón mejorado para registrar nuevo servicio
                         Button(
                             onClick = { vehicle?.let { onNavigateToAddService(it.id) } },
                             modifier = Modifier.fillMaxWidth(),

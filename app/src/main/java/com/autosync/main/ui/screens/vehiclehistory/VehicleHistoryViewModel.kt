@@ -35,7 +35,6 @@ class VehicleHistoryViewModel @Inject constructor(
         if (vehicleId != null && vehicleId != -1) {
             loadVehicleAndServices(vehicleId)
         } else {
-            // No vehicle ID provided, stop loading and show an empty state.
             _isLoading.value = false
         }
     }

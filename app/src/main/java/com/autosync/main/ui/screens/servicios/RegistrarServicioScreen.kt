@@ -258,7 +258,6 @@ fun RegistrarServicioScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Fecha Próximo Servicio
             Text("Próximo Servicio", color = Color.White, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
             CustomTextField(
@@ -317,7 +316,6 @@ fun RegistrarServicioScreen(
                 )
             }
 
-            // Sección Imagen de Recibo
             Text("Comprobante / Recibo", color = Color.White, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -354,7 +352,6 @@ fun RegistrarServicioScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop
                         )
-                        // Overlay para editar
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()

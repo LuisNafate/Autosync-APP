@@ -56,22 +56,17 @@ class UserRepositoryImpl @Inject constructor(
                 userDao.insertUser(it)
             }
         } catch (e: Exception) {
-            // Handle errors
         }
     }
 
     override suspend fun deleteUser(uid: String) {
-        // Cascade delete vehicles (which cascades services)
         vehicleRepository.deleteVehiclesForUser(uid)
         
-        // Delete notifications
         notificationRepository.deleteAllUserNotifications(uid)
         
-        // Delete user from Firestore
         db.collection("users").document(uid).delete().await()
         
-        // Delete user from Room
-        userDao.deleteUser(UserEntity(uid, "", "")) // Assuming DAO needs an entity to delete, or add clearUser(uid) query
+        userDao.deleteUser(UserEntity(uid, "", ""))
     }
 
     override suspend fun clearLocalUser() {

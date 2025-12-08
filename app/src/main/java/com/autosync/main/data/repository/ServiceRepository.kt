@@ -18,10 +18,10 @@ interface ServiceRepository {
     suspend fun insertService(service: Service, imageUri: android.net.Uri? = null)
     suspend fun updateService(service: Service)
     suspend fun deleteService(service: Service)
-    suspend fun syncServices(userId: String) // Added for synchronization
+    suspend fun syncServices(userId: String)
     fun getServicesForUser(userId: String): Flow<List<Service>>
     suspend fun deleteServicesForVehicle(vehicleId: Int)
-    suspend fun clearLocalServices() // Added for logout cleanup
+    suspend fun clearLocalServices()
 }
 
 class ServiceRepositoryImpl @Inject constructor(
@@ -41,24 +41,21 @@ class ServiceRepositoryImpl @Inject constructor(
 
 
     override suspend fun insertService(service: Service, imageUri: android.net.Uri?) {
-        val newId = serviceDao.insertService(service) // Insert locally first to get ID
+        val newId = serviceDao.insertService(service)
         var serviceWithId = service.copy(id = newId.toInt())
 
         try {
-            // Convert to Base64 if exists
             if (imageUri != null) {
                 val base64Image = compressUriToBase64(imageUri)
                 if (base64Image != null) {
                     serviceWithId = serviceWithId.copy(receiptImageUrl = base64Image)
-                    // Update Room with Base64 String
                     serviceDao.updateService(serviceWithId)
                 }
             }
 
-            // Save to Firestore
+
             serviceCollection.document(newId.toString()).set(serviceWithId).await()
             
-            // Trigger Notification
             if (service.userId.isNotEmpty()) {
                 val nextDateMsg = service.nextServiceDate?.let {
                      val fmt = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
@@ -75,7 +72,6 @@ class ServiceRepositoryImpl @Inject constructor(
                  try {
                     notificationRepository.createNotification(notification)
                 } catch (e: Exception) {
-                    // Ignore notification errors to not block flow
                 }
             }
 
@@ -92,7 +88,6 @@ class ServiceRepositoryImpl @Inject constructor(
             
             if (bitmap == null) return@withContext null
 
-            // Resize if too big (max 800x800)
             val maxDimension = 800
             val ratio = Math.min(
                 maxDimension.toFloat() / bitmap.width,
@@ -104,7 +99,6 @@ class ServiceRepositoryImpl @Inject constructor(
             val resizedBitmap = android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true)
 
             val outputStream = java.io.ByteArrayOutputStream()
-            // High compression for Firestore (60% quality)
             resizedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, outputStream)
             val byteArray = outputStream.toByteArray()
             
@@ -133,11 +127,10 @@ class ServiceRepositoryImpl @Inject constructor(
                 .await()
                 .toObjects<Service>()
             
-            // This assumes you have a method in your DAO to clear and insert
-            // serviceDao.clearUserServices(userId) // Removed to prevent disappearing items due to latency
-            serviceDao.insertServices(remoteServices) // You may need to add this method
+
+            serviceDao.insertServices(remoteServices)
         } catch (e: Exception) {
-            // Handle exceptions
+
         }
     }
 
@@ -145,7 +138,6 @@ class ServiceRepositoryImpl @Inject constructor(
     override fun getServicesForUser(userId: String): Flow<List<Service>> = serviceDao.getServicesForUser(userId)
 
     override suspend fun deleteServicesForVehicle(vehicleId: Int) {
-         // Query Firestore for docs to delete
         val snapshot = serviceCollection.whereEqualTo("vehicleId", vehicleId).get().await()
         if (!snapshot.isEmpty) {
             val batch = firestore.batch()
@@ -154,14 +146,10 @@ class ServiceRepositoryImpl @Inject constructor(
             }
             batch.commit().await()
         }
-        // Delete from Room
         serviceDao.deleteServicesForVehicle(vehicleId)
     }
 
     override suspend fun clearLocalServices() {
-        serviceDao.deleteAllServices() // Assuming DAO has a deleteAll or we iterate? Let's check ServiceDao first or just add query. 
-        // Actually, I should probably check ServiceDao. If it doesn't have it, I'll need to add it.
-        // For now, I'll assume I need to add it to DAO or use a query. 
-        // Let's assume I'll add deleteAll to DAO in next step.
+        serviceDao.deleteAllServices()
     }
 }

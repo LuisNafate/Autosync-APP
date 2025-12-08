@@ -16,7 +16,7 @@ interface ServiceDao {
     suspend fun insertService(service: Service): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertServices(services: List<Service>) // For synchronization
+    suspend fun insertServices(services: List<Service>)
 
     @Update
     suspend fun updateService(service: Service)
@@ -25,7 +25,7 @@ interface ServiceDao {
     suspend fun deleteService(service: Service)
 
     @Query("DELETE FROM services WHERE userId = :userId")
-    suspend fun clearUserServices(userId: String) // For synchronization
+    suspend fun clearUserServices(userId: String)
 
     @Query("DELETE FROM services")
     suspend fun deleteAllServices()

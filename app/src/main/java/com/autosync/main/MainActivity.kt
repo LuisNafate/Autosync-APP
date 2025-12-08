@@ -36,7 +36,6 @@ import kotlinx.coroutines.launch
     @javax.inject.Inject lateinit var vehicleRepository: com.autosync.main.data.repository.VehicleRepository
     @javax.inject.Inject lateinit var serviceRepository: com.autosync.main.data.repository.ServiceRepository
 
-    // Facebook CallbackManager
     private val callbackManager = com.facebook.CallbackManager.Factory.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,12 +48,13 @@ import kotlinx.coroutines.launch
         val currentTime = System.currentTimeMillis()
         
         val isValidSession = auth.currentUser != null && expiryTime > currentTime
-        val startDestination = if (isValidSession) "home" else "login"
+        val nextDestination = if (isValidSession) "home" else "login"
 
         setContent {
             MainTheme {
                 AppNavigation(
-                    startDestination = startDestination,
+                    startDestination = "splash",
+                    nextDestination = nextDestination,
                     userRepository = userRepository,
                     vehicleRepository = vehicleRepository,
                     serviceRepository = serviceRepository,
@@ -75,6 +75,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavigation(
     startDestination: String,
+    nextDestination: String,
     userRepository: com.autosync.main.data.repository.UserRepository,
     vehicleRepository: com.autosync.main.data.repository.VehicleRepository,
     serviceRepository: com.autosync.main.data.repository.ServiceRepository,
@@ -84,7 +85,7 @@ fun AppNavigation(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val routesWithoutBottomBar = setOf("login", "registro")
+    val routesWithoutBottomBar = setOf("splash", "login", "registro")
 
     Scaffold(
         bottomBar = {
@@ -98,6 +99,15 @@ fun AppNavigation(
             startDestination = startDestination,
             modifier = Modifier.padding(it)
         ) {
+            composable("splash") {
+                com.autosync.main.ui.screens.splash.SplashScreen(
+                    onAnimationEnd = {
+                        navController.navigate(nextDestination) {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable("login") {
                 LoginScreen(
                     onLoginSuccess = {
@@ -134,7 +144,6 @@ fun AppNavigation(
                     },
                     onLogout = {
                         scope.launch {
-                            // 1. Google SignOut (Force account chooser next time)
                             try {
                                 val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
                                     .requestIdToken("510711962650-t0ub0bhp1kaobpb80ogul9plugbb6b7o.apps.googleusercontent.com")
@@ -146,7 +155,6 @@ fun AppNavigation(
                                 e.printStackTrace()
                             }
 
-                            // 2. Clear Local Data
                             try {
                                 userRepository.clearLocalUser()
                                 vehicleRepository.clearLocalVehicles()
@@ -155,14 +163,11 @@ fun AppNavigation(
                                 e.printStackTrace()
                             }
 
-                            // 3. Clear Prefs
                             val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
                             sharedPrefs.edit().clear().apply()
 
-                            // 4. Firebase SignOut
                             com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
                             
-                            // 5. Navigate to Login
                             navController.navigate("login") {
                                 popUpTo(0) { inclusive = true }
                             }

@@ -34,17 +34,13 @@ class VehicleRepositoryImpl @Inject constructor(
     override suspend fun getVehicleById(id: Int): Vehicle? = vehicleDao.getVehicleById(id)
 
     override suspend fun insertVehicle(vehicle: Vehicle) {
-        // 1. Insert into Room to get the auto-generated ID
         val newId = vehicleDao.insertVehicle(vehicle)
         
-        // 2. Create a copy of the vehicle with the correct ID
         val vehicleWithId = vehicle.copy(id = newId.toInt())
         
-        // 3. Save the complete object to Firestore, using the ID as the document key
         try {
             vehicleCollection.document(newId.toString()).set(vehicleWithId).await()
             
-            // Trigger Notification
             if (vehicle.userId.isNotEmpty()) {
                 val notification = Notification(
                     userId = vehicle.userId,
@@ -56,31 +52,25 @@ class VehicleRepositoryImpl @Inject constructor(
                 try {
                     notificationRepository.createNotification(notification)
                 } catch (e: Exception) {
-                    // Ignore notification errors to not block flow
+
                 }
             }
 
         } catch (e: Exception) {
-            // If Firestore fails, roll back the local insert to maintain consistency
             vehicleDao.deleteVehicle(vehicleWithId)
-            throw e // Re-throw the exception to notify the caller
+            throw e
         }
     }
 
     override suspend fun updateVehicle(vehicle: Vehicle) {
-        // Update in Firestore first
         vehicleCollection.document(vehicle.id.toString()).set(vehicle).await()
-        // Then update in the local database
         vehicleDao.updateVehicle(vehicle)
     }
 
     override suspend fun deleteVehicle(vehicle: Vehicle) {
-        // Cascade delete services first
         serviceRepository.deleteServicesForVehicle(vehicle.id)
         
-        // Delete from Firestore
         vehicleCollection.document(vehicle.id.toString()).delete().await()
-        // Then delete from the local database
         vehicleDao.deleteVehicle(vehicle)
     }
 
@@ -95,7 +85,7 @@ class VehicleRepositoryImpl @Inject constructor(
             vehicleDao.deleteUserVehicles(userId)
             vehicleDao.insertVehicles(remoteVehicles)
         } catch (e: Exception) {
-            // Handle network or other errors
+
         }
     }
 
@@ -104,19 +94,15 @@ class VehicleRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteVehiclesForUser(userId: String) {
-        // Get vehicles for user to get their IDs
         val vehicles = vehicleCollection.whereEqualTo("userId", userId).get().await().toObjects(Vehicle::class.java)
         
         val batch = firestore.batch()
         vehicles.forEach { vehicle ->
-            // Delete services for each vehicle
             serviceRepository.deleteServicesForVehicle(vehicle.id)
-            // Delete vehicle from Firestore
             batch.delete(vehicleCollection.document(vehicle.id.toString()))
         }
         batch.commit().await()
         
-        // Delete from Room
         vehicleDao.deleteUserVehicles(userId)
     }
 }

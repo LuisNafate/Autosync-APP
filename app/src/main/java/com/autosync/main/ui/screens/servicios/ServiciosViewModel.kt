@@ -39,11 +39,9 @@ class ServiciosViewModel @Inject constructor(
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             viewModelScope.launch {
-                // Sincronizar servicios remotos
                 try {
                     serviceRepository.syncServices(userId)
                 } catch (e: Exception) {
-                    // Manejar error de sync silenciosamente o mostrar en UI
                 }
             }
 
@@ -65,13 +63,10 @@ class ServiciosViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = false)
         }
     }
-
-    // La lógica de borrado necesitará ser repensada, 
-    // pero por ahora la comentamos para que no de errores de compilación.
     /*
     fun deleteServicio(service: Service) {
         viewModelScope.launch {
-            serviceRepository.deleteService(service) // Suponiendo que exista un método deleteService
+            serviceRepository.deleteService(service)
         }
     }
     */

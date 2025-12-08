@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 data class HomeState(
     val user: UserEntity? = null,
-    val documents: List<Any> = emptyList(), // Placeholder for now
+    val documents: List<Any> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val recentServices: List<Service> = emptyList(),
     val latestInvoices: List<Service> = emptyList(),

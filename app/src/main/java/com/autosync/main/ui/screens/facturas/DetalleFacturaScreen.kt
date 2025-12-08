@@ -84,7 +84,6 @@ fun DetalleFacturaScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Datos receptor
             Text(
                 "Datos receptor",
                 fontWeight = FontWeight.SemiBold,
@@ -135,7 +134,6 @@ fun DetalleFacturaScreen(
                 }
             }
             
-            // Información del vehículo
             vehicle?.let { vehicleData ->
                 Card(
                     shape = RoundedCornerShape(16.dp),
@@ -185,7 +183,6 @@ fun DetalleFacturaScreen(
                 }
             }
             
-            // Detalle servicio
             Text(
                 "Detalle servicio",
                 fontWeight = FontWeight.SemiBold,
@@ -257,7 +254,6 @@ fun DetalleFacturaScreen(
                     }
                 }
                 
-                // Monto total
                 Text(
                     "Monto total: ${serviceData.cost ?: 0.0} MXN",
                     fontWeight = FontWeight.SemiBold,
@@ -265,7 +261,6 @@ fun DetalleFacturaScreen(
                     color = Color.White
                 )
 
-                // COMPROBANTE / RECIBO (Imagen Base64)
                 if (!serviceData.receiptImageUrl.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -302,7 +297,6 @@ fun DetalleFacturaScreen(
                         
                          Spacer(modifier = Modifier.height(8.dp))
                             
-                         // Botón descargar IMAGEN
                         val context = androidx.compose.ui.platform.LocalContext.current
                         val scope = rememberCoroutineScope()
                         var isSaving by remember { mutableStateOf(false) }

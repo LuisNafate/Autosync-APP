@@ -50,7 +50,6 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         viewModelScope.launch {
-            // Limpieza proactiva antes de nuevo login
             userRepository.clearLocalUser()
             vehicleRepository.clearLocalVehicles()
             serviceRepository.clearLocalServices()
@@ -60,16 +59,14 @@ class LoginViewModel @Inject constructor(
                 val authResult = auth.signInWithEmailAndPassword(_state.value.email, _state.value.password).await()
                 val user = authResult.user
                 if (user != null) {
-                    // Guardar preferencia de "Recordarme" con expiración (30 días)
                     val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
                     if (_state.value.recordarme) {
-                        val expiryTime = System.currentTimeMillis() + (15L * 60 * 1000) // 15 minutos
+                        val expiryTime = System.currentTimeMillis() + (15L * 60 * 1000)
                         sharedPrefs.edit().putLong("session_expiry", expiryTime).apply()
                     } else {
                         sharedPrefs.edit().remove("session_expiry").apply()
                     }
 
-                    // Sync all data for the logged-in user
                     userRepository.syncUser(user.uid)
                     vehicleRepository.syncVehicles(user.uid)
                     serviceRepository.syncServices(user.uid)
@@ -86,7 +83,7 @@ class LoginViewModel @Inject constructor(
 
     fun signInWithGoogle(idToken: String) {
         viewModelScope.launch {
-            // Limpieza proactiva antes de nuevo login
+
             userRepository.clearLocalUser()
             vehicleRepository.clearLocalVehicles()
             serviceRepository.clearLocalServices()

@@ -39,7 +39,7 @@ class AddVehicleViewModel @Inject constructor(
 
     init {
         editingVehicleId?.let {
-            if (it != -1) { // Hilt/Navigation passes -1 for missing optional args
+            if (it != -1) {
                 loadVehicle(it)
             }
         }
@@ -60,7 +60,7 @@ class AddVehicleViewModel @Inject constructor(
 
     fun onMarcaChange(value: String) {
         marca.value = value
-        if (value.length > 2) { // To avoid too many API calls
+        if (value.length > 2) {
             searchModels()
         }
     }

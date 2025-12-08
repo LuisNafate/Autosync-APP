@@ -13,10 +13,10 @@ import kotlinx.coroutines.flow.Flow
 interface VehicleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertVehicle(vehicle: Vehicle): Long // Modified to return the new ID
+    suspend fun insertVehicle(vehicle: Vehicle): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertVehicles(vehicles: List<Vehicle>) // Añadido para la sincronización
+    suspend fun insertVehicles(vehicles: List<Vehicle>)
 
     @Update
     suspend fun updateVehicle(vehicle: Vehicle)
@@ -25,10 +25,10 @@ interface VehicleDao {
     suspend fun deleteVehicle(vehicle: Vehicle)
 
     @Query("DELETE FROM vehicles WHERE userId = :userId")
-    suspend fun deleteUserVehicles(userId: String) // Añadido para la sincronización
+    suspend fun deleteUserVehicles(userId: String)
 
     @Query("DELETE FROM vehicles")
-    suspend fun clearAllVehicles() // New method to clear all data
+    suspend fun clearAllVehicles()
 
     @Query("SELECT * FROM vehicles")
     fun getVehicles(): Flow<List<Vehicle>>

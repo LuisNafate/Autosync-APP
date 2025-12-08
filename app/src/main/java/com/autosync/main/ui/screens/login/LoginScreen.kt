@@ -270,7 +270,6 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                // Setup Google Sign In
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val googleSignInClient = remember {
                     val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)

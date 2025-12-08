@@ -19,7 +19,7 @@ data class RegistrarServicioState(
     val selectedVehicleId: Int? = null,
     val selectedVehicleName: String? = null,
     val tipoServicio: String = "",
-    val otroServicio: String = "", // ¡Añadido!
+    val otroServicio: String = "",
     val taller: String = "",
     val fecha: Long = System.currentTimeMillis(),
     val nextServiceDate: Long? = null,
@@ -80,7 +80,7 @@ class RegistrarServicioViewModel @Inject constructor(
         )
     }
 
-    fun onOtroServicioChange(value: String) { // ¡Añadido!
+    fun onOtroServicioChange(value: String) {
         _state.value = _state.value.copy(otroServicio = value)
     }
 
@@ -119,7 +119,6 @@ class RegistrarServicioViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
 
             try {
-                // Obtener el usuario del vehículo seleccionado
                 val selectedVehicle = _state.value.vehicles.find { it.id == _state.value.selectedVehicleId }
                 val userId = selectedVehicle?.userId ?: ""
 

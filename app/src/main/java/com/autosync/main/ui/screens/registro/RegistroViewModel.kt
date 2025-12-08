@@ -84,7 +84,6 @@ class RegistroViewModel @Inject constructor(
         if (!validate()) return
 
         viewModelScope.launch {
-            // ** THE FIX: Clear local data before starting a new session **
             userRepository.clearLocalUser()
             vehicleRepository.clearLocalVehicles()
             serviceRepository.clearLocalServices()
@@ -121,13 +120,10 @@ class RegistroViewModel @Inject constructor(
                     val name = user.displayName ?: "Usuario Google"
                     val email = user.email ?: ""
                     
-                    // Asegurar que exista en Firestore (si es nuevo registro via Google)
                     userRepository.guardarUsuario(user.uid, name, email)
                     
                     val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
-                    // En registro asumimos sesión normal, o podríamos no setear expiry. 
-                    // Para consistencia con login, lo dejamos sin "recordarme" explicito o default.
-                    // Pero el usuario viene de registrarse, asi que logueamos.
+
                     sharedPrefs.edit().remove("session_expiry").apply() 
 
                     userRepository.syncUser(user.uid)
