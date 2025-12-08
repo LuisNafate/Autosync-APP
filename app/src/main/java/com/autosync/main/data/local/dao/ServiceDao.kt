@@ -27,6 +27,9 @@ interface ServiceDao {
     @Query("DELETE FROM services WHERE userId = :userId")
     suspend fun clearUserServices(userId: String) // For synchronization
 
+    @Query("DELETE FROM services")
+    suspend fun deleteAllServices()
+
     @Query("DELETE FROM services WHERE vehicleId = :vehicleId")
     suspend fun deleteServicesForVehicle(vehicleId: Int)
 

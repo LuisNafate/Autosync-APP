@@ -15,6 +15,7 @@ interface UserRepository {
 
     suspend fun syncUser(uid: String)
     suspend fun deleteUser(uid: String)
+    suspend fun clearLocalUser()
 }
 
 @Singleton
@@ -71,5 +72,9 @@ class UserRepositoryImpl @Inject constructor(
         
         // Delete user from Room
         userDao.deleteUser(UserEntity(uid, "", "")) // Assuming DAO needs an entity to delete, or add clearUser(uid) query
+    }
+
+    override suspend fun clearLocalUser() {
+        userDao.deleteAllUsers()
     }
 }

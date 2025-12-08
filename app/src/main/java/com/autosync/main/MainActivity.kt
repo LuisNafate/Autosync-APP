@@ -27,9 +27,15 @@ import com.autosync.main.ui.screens.servicios.ServiciosScreen
 import com.autosync.main.ui.screens.vehicles.VehiclesScreen
 import com.autosync.main.ui.theme.MainTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @javax.inject.Inject lateinit var userRepository: com.autosync.main.data.repository.UserRepository
+    @javax.inject.Inject lateinit var vehicleRepository: com.autosync.main.data.repository.VehicleRepository
+    @javax.inject.Inject lateinit var serviceRepository: com.autosync.main.data.repository.ServiceRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -45,7 +51,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MainTheme {
-                AppNavigation(startDestination = startDestination)
+                AppNavigation(
+                    startDestination = startDestination,
+                    userRepository = userRepository,
+                    vehicleRepository = vehicleRepository,
+                    serviceRepository = serviceRepository
+                )
             }
         }
     }
@@ -53,7 +64,12 @@ class MainActivity : ComponentActivity() {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AppNavigation(startDestination: String) {
+fun AppNavigation(
+    startDestination: String,
+    userRepository: com.autosync.main.data.repository.UserRepository,
+    vehicleRepository: com.autosync.main.data.repository.VehicleRepository,
+    serviceRepository: com.autosync.main.data.repository.ServiceRepository
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -98,21 +114,46 @@ fun AppNavigation(startDestination: String) {
             }
             composable("home") {
                 val context = androidx.compose.ui.platform.LocalContext.current
+                val scope = androidx.compose.runtime.rememberCoroutineScope()
+                
                 HomeScreen(
                     onNavigateToAddVehicle = {
                         navController.navigate("vehicle_details")
                     },
                     onLogout = {
-                        // 1. Firebase SignOut
-                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                        
-                        // 2. Clear Prefs
-                        val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
-                        sharedPrefs.edit().clear().apply() // Or remove specific keys
-                        
-                        // 3. Navigate to Login
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
+                        scope.launch {
+                            // 1. Google SignOut (Force account chooser next time)
+                            try {
+                                val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestIdToken("510711962650-t0ub0bhp1kaobpb80ogul9plugbb6b7o.apps.googleusercontent.com")
+                                    .requestEmail()
+                                    .build()
+                                val googleSignInClient = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
+                                googleSignInClient.signOut()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+
+                            // 2. Clear Local Data
+                            try {
+                                userRepository.clearLocalUser()
+                                vehicleRepository.clearLocalVehicles()
+                                serviceRepository.clearLocalServices()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+
+                            // 3. Clear Prefs
+                            val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                            sharedPrefs.edit().clear().apply()
+
+                            // 4. Firebase SignOut
+                            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                            
+                            // 5. Navigate to Login
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     }
                 )

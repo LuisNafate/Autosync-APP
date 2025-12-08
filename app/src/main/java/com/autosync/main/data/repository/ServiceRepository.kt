@@ -21,6 +21,7 @@ interface ServiceRepository {
     suspend fun syncServices(userId: String) // Added for synchronization
     fun getServicesForUser(userId: String): Flow<List<Service>>
     suspend fun deleteServicesForVehicle(vehicleId: Int)
+    suspend fun clearLocalServices() // Added for logout cleanup
 }
 
 class ServiceRepositoryImpl @Inject constructor(
@@ -155,5 +156,12 @@ class ServiceRepositoryImpl @Inject constructor(
         }
         // Delete from Room
         serviceDao.deleteServicesForVehicle(vehicleId)
+    }
+
+    override suspend fun clearLocalServices() {
+        serviceDao.deleteAllServices() // Assuming DAO has a deleteAll or we iterate? Let's check ServiceDao first or just add query. 
+        // Actually, I should probably check ServiceDao. If it doesn't have it, I'll need to add it.
+        // For now, I'll assume I need to add it to DAO or use a query. 
+        // Let's assume I'll add deleteAll to DAO in next step.
     }
 }

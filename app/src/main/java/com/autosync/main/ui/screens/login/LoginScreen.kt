@@ -2,6 +2,7 @@ package com.autosync.main.ui.screens.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -155,8 +156,16 @@ fun LoginScreen(
                     Checkbox(checked = state.recordarme, onCheckedChange = { viewModel.onRecordarmeChange(it) })
                     Text("Recordarme", color = Color.White)
                 }
-                TextButton(onClick = { /* TODO */ }) {
-                    Text("¿Olvidó su contraseña?", color = MaterialTheme.colorScheme.tertiary)
+                TextButton(
+                    onClick = { /* TODO */ },
+                    contentPadding = PaddingValues(horizontal = 8.dp) // Reducir padding horizontal
+                ) {
+                    Text(
+                        "¿Olvidó su contraseña?",
+                        color = MaterialTheme.colorScheme.tertiary,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
 
@@ -194,8 +203,37 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
+                // Setup Google Sign In
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val googleSignInClient = remember {
+                    val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken("510711962650-t0ub0bhp1kaobpb80ogul9plugbb6b7o.apps.googleusercontent.com") 
+                        .requestEmail()
+                        .build()
+                    com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
+                }
+                
+                val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+                ) { result ->
+                    if (result.resultCode == android.app.Activity.RESULT_OK) {
+                        val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                        try {
+                            val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                            account?.idToken?.let { token ->
+                                viewModel.signInWithGoogle(token)
+                            }
+                        } catch (e: com.google.android.gms.common.api.ApiException) {
+                            // Handle error
+                             android.util.Log.e("GoogleSignIn", "Google sign in failed", e)
+                        }
+                    }
+                }
+
                 OutlinedButton(
-                    onClick = { /* TODO: Google Login */ },
+                    onClick = { 
+                        launcher.launch(googleSignInClient.signInIntent) 
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
