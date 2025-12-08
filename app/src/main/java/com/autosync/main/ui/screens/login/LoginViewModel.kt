@@ -164,4 +164,14 @@ class LoginViewModel @Inject constructor(
             }
         }
     }
+    fun resetPassword(email: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                auth.sendPasswordResetEmail(email).await()
+                onResult(true, null)
+            } catch (e: Exception) {
+                onResult(false, e.message)
+            }
+        }
+    }
 }

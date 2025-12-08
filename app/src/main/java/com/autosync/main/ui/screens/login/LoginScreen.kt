@@ -36,6 +36,7 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
 
     // Register Facebook Callback
     DisposableEffect(Unit) {
@@ -152,7 +153,7 @@ fun LoginScreen(
                     Text("Recordarme", color = Color.White)
                 }
                 TextButton(
-                    onClick = { /* TODO */ },
+                    onClick = { showForgotPasswordDialog = true },
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Text(
@@ -162,6 +163,77 @@ fun LoginScreen(
                         softWrap = false
                     )
                 }
+            }
+
+            if (showForgotPasswordDialog) {
+                var resetEmail by remember { mutableStateOf(state.email) }
+                var isSending by remember { mutableStateOf(false) }
+                var errorMsg by remember { mutableStateOf<String?>(null) }
+                var successMsg by remember { mutableStateOf<String?>(null) }
+
+                AlertDialog(
+                    onDismissRequest = { showForgotPasswordDialog = false },
+                    title = { Text("Recuperar Contraseña") },
+                    text = {
+                        Column {
+                            Text("Ingresa tu correo electrónico para recibir un enlace de recuperación.")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            CustomTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = resetEmail,
+                                onValueChange = { resetEmail = it; errorMsg = null },
+                                label = "",
+                                placeholder = "tuemail@ejemplo.com",
+                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                            )
+                            if (errorMsg != null) {
+                                Text(errorMsg!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (successMsg != null) {
+                                Text(successMsg!!, color = Color.Green, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        if (successMsg == null) {
+                            Button(
+                                onClick = {
+                                    if (resetEmail.isBlank()) {
+                                        errorMsg = "Ingresa un correo válido"
+                                    } else {
+                                        isSending = true
+                                        viewModel.resetPassword(resetEmail) { success, error ->
+                                            isSending = false
+                                            if (success) {
+                                                successMsg = "Correo enviado. Revisa tu bandeja de entrada o SPAM."
+                                            } else {
+                                                errorMsg = error ?: "Error al enviar correo"
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !isSending
+                            ) {
+                                if (isSending) {
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                                } else {
+                                    Text("Enviar")
+                                }
+                            }
+                        } else {
+                            Button(onClick = { showForgotPasswordDialog = false }) {
+                                Text("Cerrar")
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        if (successMsg == null) {
+                            TextButton(onClick = { showForgotPasswordDialog = false }) {
+                                Text("Cancelar")
+                            }
+                        }
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
