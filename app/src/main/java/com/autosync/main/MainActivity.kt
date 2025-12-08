@@ -30,11 +30,14 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+    class MainActivity : ComponentActivity() {
 
     @javax.inject.Inject lateinit var userRepository: com.autosync.main.data.repository.UserRepository
     @javax.inject.Inject lateinit var vehicleRepository: com.autosync.main.data.repository.VehicleRepository
     @javax.inject.Inject lateinit var serviceRepository: com.autosync.main.data.repository.ServiceRepository
+
+    // Facebook CallbackManager
+    private val callbackManager = com.facebook.CallbackManager.Factory.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +48,6 @@ class MainActivity : ComponentActivity() {
         val expiryTime = sharedPrefs.getLong("session_expiry", 0)
         val currentTime = System.currentTimeMillis()
         
-        // Sesión válida si hay usuario Y el tiempo de expiración es mayor al actual
         val isValidSession = auth.currentUser != null && expiryTime > currentTime
         val startDestination = if (isValidSession) "home" else "login"
 
@@ -55,10 +57,17 @@ class MainActivity : ComponentActivity() {
                     startDestination = startDestination,
                     userRepository = userRepository,
                     vehicleRepository = vehicleRepository,
-                    serviceRepository = serviceRepository
+                    serviceRepository = serviceRepository,
+                    callbackManager = callbackManager
                 )
             }
         }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        callbackManager.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }
 
@@ -68,7 +77,8 @@ fun AppNavigation(
     startDestination: String,
     userRepository: com.autosync.main.data.repository.UserRepository,
     vehicleRepository: com.autosync.main.data.repository.VehicleRepository,
-    serviceRepository: com.autosync.main.data.repository.ServiceRepository
+    serviceRepository: com.autosync.main.data.repository.ServiceRepository,
+    callbackManager: com.facebook.CallbackManager
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -95,7 +105,8 @@ fun AppNavigation(
                             popUpTo("login") { inclusive = true }
                         }
                     },
-                    onNavigateToRegistro = { navController.navigate("registro") }
+                    onNavigateToRegistro = { navController.navigate("registro") },
+                    callbackManager = callbackManager
                 )
             }
             composable("registro") {

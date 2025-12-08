@@ -1,16 +1,6 @@
 package com.autosync.main.ui.screens.login
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,25 +10,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +21,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.autosync.main.ui.components.CustomTextField
 import com.autosync.main.ui.icons.FacebookIcon
 import com.autosync.main.ui.icons.GoogleIcon
@@ -55,11 +30,31 @@ import com.autosync.main.ui.icons.GoogleIcon
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onNavigateToRegistro: () -> Unit
+    onNavigateToRegistro: () -> Unit,
+    callbackManager: com.facebook.CallbackManager,
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val viewModel: LoginViewModel = hiltViewModel() // ¡CORREGIDO!
     val state by viewModel.state.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Register Facebook Callback
+    DisposableEffect(Unit) {
+        val loginManager = com.facebook.login.LoginManager.getInstance()
+        loginManager.registerCallback(callbackManager, object : com.facebook.FacebookCallback<com.facebook.login.LoginResult> {
+            override fun onSuccess(result: com.facebook.login.LoginResult) {
+                viewModel.signInWithFacebook(result.accessToken)
+            }
+
+            override fun onCancel() {
+                // Handle cancellation
+            }
+
+            override fun onError(error: com.facebook.FacebookException) {
+                viewModel.signInWithGoogle("FAIL") // Reuse error logic
+            }
+        })
+        onDispose { }
+    }
 
     LaunchedEffect(state.isLoginSuccessful) {
         if (state.isLoginSuccessful) {
@@ -158,7 +153,7 @@ fun LoginScreen(
                 }
                 TextButton(
                     onClick = { /* TODO */ },
-                    contentPadding = PaddingValues(horizontal = 8.dp) // Reducir padding horizontal
+                    contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Text(
                         "¿Olvidó su contraseña?",
@@ -207,14 +202,14 @@ fun LoginScreen(
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val googleSignInClient = remember {
                     val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestIdToken("510711962650-t0ub0bhp1kaobpb80ogul9plugbb6b7o.apps.googleusercontent.com") 
+                        .requestIdToken(context.getString(com.autosync.main.R.string.default_web_client_id)) 
                         .requestEmail()
                         .build()
                     com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
                 }
                 
-                val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
-                    contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartActivityForResult()
                 ) { result ->
                     if (result.resultCode == android.app.Activity.RESULT_OK) {
                         val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
@@ -224,8 +219,7 @@ fun LoginScreen(
                                 viewModel.signInWithGoogle(token)
                             }
                         } catch (e: com.google.android.gms.common.api.ApiException) {
-                            // Handle error
-                             android.util.Log.e("GoogleSignIn", "Google sign in failed", e)
+                            viewModel.signInWithGoogle("FAIL")
                         }
                     }
                 }
@@ -241,9 +235,16 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Google", color = Color.White)
                 }
+                
                 Spacer(modifier = Modifier.width(16.dp))
+                
                 OutlinedButton(
-                    onClick = { /* TODO: Facebook Login */ },
+                    onClick = { 
+                        com.facebook.login.LoginManager.getInstance().logInWithReadPermissions(
+                            context as androidx.activity.ComponentActivity,
+                            listOf("email", "public_profile")
+                        )
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {

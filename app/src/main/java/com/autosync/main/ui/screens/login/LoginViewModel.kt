@@ -98,36 +98,66 @@ class LoginViewModel @Inject constructor(
                 val user = authResult.user
                 
                 if (user != null) {
-                    // Sync/Create user in Firestore/Room
-                    // Use displayName and email from the Google account
                     val name = user.displayName ?: "Usuario Google"
                     val email = user.email ?: ""
                     
                     userRepository.guardarUsuario(user.uid, name, email)
                     
-                    // Also sync other data
-                    vehicleRepository.syncVehicles(user.uid)
-                    serviceRepository.syncServices(user.uid)
-                    
-                    // Save session expiry roughly similar to "Recordarme" (defaulting to enabled for Google for convenience, or check the box?)
-                    // Logic says: if they click Google, they likely want to stay logged in or standard session.
-                    // Let's check the checkbox state just in case, or default to true?
-                    // User didn't specify, but standard Google login usually suggests persistence.
-                    // I'll respect the checkbox state for consistency.
                     val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
                      if (_state.value.recordarme) {
                         val expiryTime = System.currentTimeMillis() + (15L * 60 * 1000) // 15 minutos
                         sharedPrefs.edit().putLong("session_expiry", expiryTime).apply()
                     } else {
-                        // For Google Login, if not "remember me", standard session applies.
-                        // But if I don't save session_expiry, MainActivity might redirect to login on next app start.
-                        // If "Remember Me" is UNCHECKED, we shouldn't save expiry, so they have to login again.
                         sharedPrefs.edit().remove("session_expiry").apply()
                     }
+
+                    userRepository.syncUser(user.uid)
+                    vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid)
 
                     _state.value = _state.value.copy(isLoading = false, isLoginSuccessful = true)
                 } else {
                     _state.value = _state.value.copy(isLoading = false, generalError = "Error en Google Sign-In.")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
+            }
+        }
+    }
+
+    fun signInWithFacebook(accessToken: com.facebook.AccessToken) {
+        viewModelScope.launch {
+            userRepository.clearLocalUser()
+            vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
+
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
+            try {
+                val credential = com.google.firebase.auth.FacebookAuthProvider.getCredential(accessToken.token)
+                val authResult = auth.signInWithCredential(credential).await()
+                val user = authResult.user
+
+                if (user != null) {
+                    val name = user.displayName ?: "Usuario Facebook"
+                    val email = user.email ?: ""
+
+                    userRepository.guardarUsuario(user.uid, name, email)
+                    
+                    val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                    if (_state.value.recordarme) {
+                         val expiryTime = System.currentTimeMillis() + (15L * 60 * 1000)
+                         sharedPrefs.edit().putLong("session_expiry", expiryTime).apply()
+                    } else {
+                         sharedPrefs.edit().remove("session_expiry").apply()
+                    }
+                    
+                    userRepository.syncUser(user.uid)
+                    vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid)
+
+                    _state.value = _state.value.copy(isLoading = false, isLoginSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "Error en Facebook Sign-In.")
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, generalError = e.message)

@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended:1.6.5")
     implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("com.facebook.android:facebook-login:16.0.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
