@@ -85,14 +85,7 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Panel principal", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(
-                            androidx.compose.material.icons.Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Cerrar Sesión",
-                            tint = Color.White
-                        )
-                    }
-                    val hasNotifications = state.unreadCount > 0
+                    val hasNotifications = false // TODO: Replace si with actual notification state from ViewModel
                     Box(contentAlignment = Alignment.TopEnd) {
                         IconButton(onClick = { showNotificationDialog = true }) {
                             Box(
@@ -151,7 +144,7 @@ fun HomeScreen(
                             )
                         }
                         Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                        Text("Hola, ${it.nombre}", style = MaterialTheme.typography.titleLarge)
+                        Text("Hola, $userName", style = MaterialTheme.typography.titleLarge)
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))

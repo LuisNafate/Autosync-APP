@@ -20,6 +20,7 @@ import com.autosync.main.ui.navigation.BottomNavigationBar
 import com.autosync.main.ui.screens.addvehicle.AddVehicleScreen
 import com.autosync.main.ui.screens.home.HomeScreen
 import com.autosync.main.ui.screens.login.LoginScreen
+import com.autosync.main.ui.screens.login.LoginViewModel
 import com.autosync.main.ui.screens.registro.RegistroScreen
 import com.autosync.main.ui.screens.vehiclehistory.VehicleHistoryScreen
 import com.autosync.main.ui.screens.servicios.RegistrarServicioScreen
