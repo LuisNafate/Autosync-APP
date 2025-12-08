@@ -15,7 +15,7 @@ import java.util.Locale
 interface ServiceRepository {
     fun getServicesForVehicle(vehicleId: Int): Flow<List<Service>>
     fun getServiceById(serviceId: Int): Flow<Service?>
-    suspend fun insertService(service: Service)
+    suspend fun insertService(service: Service, imageUri: android.net.Uri? = null)
     suspend fun updateService(service: Service)
     suspend fun deleteService(service: Service)
     suspend fun syncServices(userId: String) // Added for synchronization
@@ -26,19 +26,35 @@ interface ServiceRepository {
 class ServiceRepositoryImpl @Inject constructor(
     private val serviceDao: ServiceDao,
     private val firestore: FirebaseFirestore,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ServiceRepository {
 
     private val serviceCollection = firestore.collection("services")
+
 
     override fun getServicesForVehicle(vehicleId: Int): Flow<List<Service>> = serviceDao.getServicesForVehicle(vehicleId)
 
     override fun getServiceById(serviceId: Int): Flow<Service?> = serviceDao.getServiceById(serviceId)
 
-    override suspend fun insertService(service: Service) {
-        val newId = serviceDao.insertService(service)
-        val serviceWithId = service.copy(id = newId.toInt())
+
+
+    override suspend fun insertService(service: Service, imageUri: android.net.Uri?) {
+        val newId = serviceDao.insertService(service) // Insert locally first to get ID
+        var serviceWithId = service.copy(id = newId.toInt())
+
         try {
+            // Convert to Base64 if exists
+            if (imageUri != null) {
+                val base64Image = compressUriToBase64(imageUri)
+                if (base64Image != null) {
+                    serviceWithId = serviceWithId.copy(receiptImageUrl = base64Image)
+                    // Update Room with Base64 String
+                    serviceDao.updateService(serviceWithId)
+                }
+            }
+
+            // Save to Firestore
             serviceCollection.document(newId.toString()).set(serviceWithId).await()
             
             // Trigger Notification
@@ -63,8 +79,38 @@ class ServiceRepositoryImpl @Inject constructor(
             }
 
         } catch (e: Exception) {
-            serviceDao.deleteService(serviceWithId)
             throw e
+        }
+    }
+
+    private suspend fun compressUriToBase64(uri: android.net.Uri): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+            inputStream?.close()
+            
+            if (bitmap == null) return@withContext null
+
+            // Resize if too big (max 800x800)
+            val maxDimension = 800
+            val ratio = Math.min(
+                maxDimension.toFloat() / bitmap.width,
+                maxDimension.toFloat() / bitmap.height
+            )
+            val width = (bitmap.width * ratio).toInt()
+            val height = (bitmap.height * ratio).toInt()
+            
+            val resizedBitmap = android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true)
+
+            val outputStream = java.io.ByteArrayOutputStream()
+            // High compression for Firestore (60% quality)
+            resizedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, outputStream)
+            val byteArray = outputStream.toByteArray()
+            
+            android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 

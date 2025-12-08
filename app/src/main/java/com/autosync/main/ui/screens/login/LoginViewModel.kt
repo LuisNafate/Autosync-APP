@@ -29,7 +29,7 @@ class LoginViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val userRepository: UserRepository,
     private val vehicleRepository: VehicleRepository,
-    private val serviceRepository: ServiceRepository // Injected ServiceRepository
+    private val serviceRepository: ServiceRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())

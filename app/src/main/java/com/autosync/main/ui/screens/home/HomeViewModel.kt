@@ -23,6 +23,7 @@ data class HomeState(
     val documents: List<Any> = emptyList(), // Placeholder for now
     val vehicles: List<Vehicle> = emptyList(),
     val recentServices: List<Service> = emptyList(),
+    val latestInvoices: List<Service> = emptyList(),
     val notifications: List<Notification> = emptyList(),
     val unreadCount: Int = 0,
     val isLoading: Boolean = true
@@ -75,7 +76,8 @@ class HomeViewModel @Inject constructor(
             firebaseUser?.uid?.let { uid ->
                 serviceRepository.getServicesForUser(uid).collect { services ->
                     _state.value = _state.value.copy(
-                        recentServices = services
+                        recentServices = services,
+                        latestInvoices = services.filter { !it.receiptImageUrl.isNullOrBlank() }
                     )
                 }
             }

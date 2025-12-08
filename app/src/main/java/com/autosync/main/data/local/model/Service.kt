@@ -25,5 +25,6 @@ data class Service(
     val date: Date = Date(),
     val details: String? = null,
     val cost: Double? = null,
-    val nextServiceDate: Date? = null
+    val nextServiceDate: Date? = null,
+    val receiptImageUrl: String? = null
 )

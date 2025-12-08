@@ -25,6 +25,7 @@ data class RegistrarServicioState(
     val nextServiceDate: Long? = null,
     val costo: String = "",
     val descripcion: String = "",
+    val receiptImageUri: android.net.Uri? = null,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
@@ -83,6 +84,10 @@ class RegistrarServicioViewModel @Inject constructor(
         _state.value = _state.value.copy(otroServicio = value)
     }
 
+    fun onReceiptImageSelected(uri: android.net.Uri?) {
+        _state.value = _state.value.copy(receiptImageUri = uri)
+    }
+
     fun onNextServiceDateChange(date: Long?) {
          _state.value = _state.value.copy(nextServiceDate = date)
     }
@@ -130,7 +135,7 @@ class RegistrarServicioViewModel @Inject constructor(
                     cost = _state.value.costo.toDoubleOrNull()
                 )
 
-                serviceRepository.insertService(service)
+                serviceRepository.insertService(service, _state.value.receiptImageUri)
                 _state.value = _state.value.copy(isLoading = false, isSuccess = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(

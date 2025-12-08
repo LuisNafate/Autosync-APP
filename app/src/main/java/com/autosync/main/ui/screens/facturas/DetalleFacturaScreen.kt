@@ -23,8 +23,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.graphics.asImageBitmap
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,34 +263,117 @@ fun DetalleFacturaScreen(
                     fontSize = 16.sp,
                     color = Color.White
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Botón descargar factura
-            Button(
-                onClick = { /* TODO: Descargar factura */ },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                shape = RoundedCornerShape(12.dp),
-                contentPadding = PaddingValues(vertical = 14.dp)
-            ) {
-                Icon(
-                    Icons.Outlined.FileDownload,
-                    contentDescription = "Descargar",
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Descargar factura PDF",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = Color.White
-                )
+
+                // COMPROBANTE / RECIBO (Imagen Base64)
+                if (!serviceData.receiptImageUrl.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Comprobante / Recibo",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                    
+                    val receiptBitmap = remember(serviceData.receiptImageUrl) {
+                        try {
+                            val decodedString = android.util.Base64.decode(serviceData.receiptImageUrl, android.util.Base64.DEFAULT)
+                            android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    
+                    if (receiptBitmap != null) {
+                         Card(
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp),
+                             colors = CardDefaults.cardColors(containerColor = cardColor)
+                        ) {
+                            androidx.compose.foundation.Image(
+                                bitmap = receiptBitmap.asImageBitmap(),
+                                contentDescription = "Recibo",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        }
+                        
+                         Spacer(modifier = Modifier.height(8.dp))
+                            
+                         // Botón descargar IMAGEN
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        val scope = rememberCoroutineScope()
+                        var isSaving by remember { mutableStateOf(false) }
+                        
+                        Button(
+                            onClick = { 
+                                isSaving = true
+                                // Save to Gallery
+                                saveImageToGallery(context, receiptBitmap, "Recibo_${serviceData.id}")
+                                isSaving = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(vertical = 14.dp),
+                            enabled = !isSaving
+                        ) {
+                             if (isSaving) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Guardando...", color = Color.White)
+                             } else {
+                                Icon(
+                                    Icons.Outlined.FileDownload,
+                                    contentDescription = "Descargar Recibo",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Descargar Recibo",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    color = Color.White
+                                )
+                             }
+                        }
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+private fun saveImageToGallery(context: android.content.Context, bitmap: android.graphics.Bitmap, title: String) {
+    val contentValues = android.content.ContentValues().apply {
+        put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "$title.jpg")
+        put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+        }
+    }
+
+    val resolver = context.contentResolver
+    val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+    if (uri != null) {
+        try {
+            resolver.openOutputStream(uri)?.use { stream ->
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, stream)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                contentValues.clear()
+                contentValues.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+            }
+            android.widget.Toast.makeText(context, "Recibo guardado en Galería", android.widget.Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+             android.widget.Toast.makeText(context, "Error al guardar", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 }

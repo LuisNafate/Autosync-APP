@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.autosync.main.ui.components.CustomTextField
 import java.text.SimpleDateFormat
@@ -32,6 +34,19 @@ fun RegistrarServicioScreen(
     var isServicioDropdownExpanded by remember { mutableStateOf(false) }
     var isCategoriaDropdownExpanded by remember { mutableStateOf(false) }
     var isVehicleDropdownExpanded by remember { mutableStateOf(false) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        viewModel.onReceiptImageSelected(uri)
+    }
+
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onNavigateBack()
+        }
+    }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
@@ -293,6 +308,7 @@ fun RegistrarServicioScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
 
+
             if (state.errorMessage != null) {
                 Text(
                     state.errorMessage ?: "",
@@ -301,11 +317,77 @@ fun RegistrarServicioScreen(
                 )
             }
 
+            // Sección Imagen de Recibo
+            Text("Comprobante / Recibo", color = Color.White, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val bitmap = remember(state.receiptImageUri) {
+                state.receiptImageUri?.let { uri ->
+                    try {
+                        if (android.os.Build.VERSION.SDK_INT < 28) {
+                            android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                        } else {
+                            val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                            android.graphics.ImageDecoder.decodeBitmap(source)
+                        }
+                    } catch (e: Exception) { null }
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clickable { launcher.launch("image/*") },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    if (bitmap != null) {
+                        androidx.compose.foundation.Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Recibo seleccionado",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                        // Overlay para editar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f)),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Cambiar imagen",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    } else {
+                        Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = "Agregar imagen",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Toca para agregar imagen de recibo", color = Color.Gray)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
                     viewModel.registrarServicio()
-                    onNavigateBack()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state.isValid && !state.isLoading,
