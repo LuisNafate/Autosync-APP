@@ -60,6 +60,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.autosync.main.data.local.model.Vehicle
+import com.autosync.main.data.local.model.Service
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.ui.graphics.vector.ImageVector
+import java.text.NumberFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,7 +170,22 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 Text("Servicios recientes", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("No tienes servicios recientes", color = Color.Gray)
+                if (state.recentServices.isEmpty()) {
+                    Text("No tienes servicios recientes", color = Color.Gray)
+                } else {
+                     LazyColumn(
+                        modifier = Modifier.height(300.dp), // Height limit for nested scroll
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.recentServices.take(5)) { service -> // Limit display
+                            val vehicle = state.vehicles.find { it.id == service.vehicleId }
+                            HomeServicioCard(
+                                service = service,
+                                vehicleName = vehicle?.let { "${it.make} ${it.model}" } ?: "Vehículo desconocido"
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(32.dp))
                 Text("Últimas facturas", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -280,5 +300,112 @@ fun VehicleCard(vehicle: Vehicle) {
             Text("${vehicle.make} ${vehicle.year}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
             Text("Placas: ${vehicle.licensePlate}", fontSize = 14.sp, color = Color.Gray)
         }
+    }
+}
+
+@Composable
+fun HomeServicioCard(
+    service: Service,
+    vehicleName: String
+) {
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("es", "MX"))
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color.DarkGray),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Build,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            service.serviceType,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            vehicleName,
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                HomeInfoItem(
+                    icon = Icons.Default.DateRange,
+                    text = dateFormat.format(service.date)
+                )
+                HomeInfoItem(
+                    icon = Icons.Default.Build,
+                    text = service.workshop
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (service.cost != null && service.cost > 0) {
+                    Text(
+                        currencyFormat.format(service.cost),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeInfoItem(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = Color.Gray
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text,
+            fontSize = 12.sp,
+            color = Color.Gray
+        )
     }
 }
