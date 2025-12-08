@@ -9,6 +9,7 @@ import com.autosync.main.data.local.model.Vehicle
 import com.autosync.main.data.remote.nhtsa.dto.ModelDto
 import com.autosync.main.data.remote.repository.VehicleApiRepository
 import com.autosync.main.data.repository.VehicleRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class AddVehicleViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
     private val vehicleApiRepository: VehicleApiRepository,
+    private val auth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -37,7 +39,7 @@ class AddVehicleViewModel @Inject constructor(
 
     init {
         editingVehicleId?.let {
-            if (it != -1) { // Hilt/Navigation passes -1 for missing optional args
+            if (it != -1) {
                 loadVehicle(it)
             }
         }
@@ -58,7 +60,7 @@ class AddVehicleViewModel @Inject constructor(
 
     fun onMarcaChange(value: String) {
         marca.value = value
-        if (value.length > 2) { // To avoid too many API calls
+        if (value.length > 2) {
             searchModels()
         }
     }
@@ -90,17 +92,31 @@ class AddVehicleViewModel @Inject constructor(
     }
 
     fun saveVehicle() {
+        val currentUserId = auth.currentUser?.uid
+        if (currentUserId == null) {
+            return
+        }
+
+        if (marca.value.isBlank() || modelo.value.isBlank() || year.value.isBlank() || licensePlate.value.isBlank()) {
+            return
+        }
+
         viewModelScope.launch {
+            val isEditing = editingVehicleId != null && editingVehicleId != -1
+            val vehicleId = if (isEditing) editingVehicleId!! else 0
+
             val vehicle = Vehicle(
-                id = editingVehicleId ?: 0,
+                id = vehicleId,
+                userId = currentUserId,
                 make = marca.value,
                 model = modelo.value,
                 year = year.value.toIntOrNull() ?: 0,
                 licensePlate = licensePlate.value,
                 imageUri = imageUri.value?.toString()
             )
+            
             withContext(Dispatchers.IO) {
-                if (editingVehicleId != null && editingVehicleId != -1) {
+                if (isEditing) {
                     vehicleRepository.updateVehicle(vehicle)
                 } else {
                     vehicleRepository.insertVehicle(vehicle)

@@ -3,14 +3,17 @@ package com.autosync.main.ui.screens.registro
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.repository.UserRepository
+import com.autosync.main.data.repository.VehicleRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
 data class RegistroState(
     val nombre: String = "",
@@ -28,13 +31,18 @@ data class RegistroState(
     val generalError: String? = null
 )
 
-class RegistroViewModel : ViewModel() {
+@HiltViewModel
+class RegistroViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+    private val vehicleRepository: VehicleRepository,
+    private val serviceRepository: com.autosync.main.data.repository.ServiceRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+) : ViewModel() {
 
     private val _state = MutableStateFlow(RegistroState())
     val state = _state.asStateFlow()
 
     private val auth: FirebaseAuth = Firebase.auth
-    private val firestore = Firebase.firestore
 
     fun onNombreChange(nombre: String) {
         _state.value = _state.value.copy(nombre = nombre, nombreError = null, generalError = null)
@@ -77,19 +85,90 @@ class RegistroViewModel : ViewModel() {
         if (!validate()) return
 
         viewModelScope.launch {
+            userRepository.clearLocalUser()
+            vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
+
             _state.value = _state.value.copy(isLoading = true, generalError = null)
             try {
                 val authResult = auth.createUserWithEmailAndPassword(_state.value.email, _state.value.password).await()
                 val firebaseUser = authResult.user
                 if (firebaseUser != null) {
-                    val user = hashMapOf(
-                        "nombre" to _state.value.nombre,
-                        "email" to _state.value.email,
-                    )
-                    firestore.collection("users").document(firebaseUser.uid).set(user).await()
+                    userRepository.guardarUsuario(firebaseUser.uid, _state.value.nombre, _state.value.email)
                     _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
                 } else {
                     _state.value = _state.value.copy(isLoading = false, generalError = "No se pudo crear el usuario.")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
+            }
+        }
+    }
+
+    fun signInWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            userRepository.clearLocalUser()
+            vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
+
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
+            try {
+                val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+                val authResult = auth.signInWithCredential(credential).await()
+                val user = authResult.user
+                
+                if (user != null) {
+                    val name = user.displayName ?: "Usuario Google"
+                    val email = user.email ?: ""
+                    
+                    userRepository.guardarUsuario(user.uid, name, email)
+                    
+                    val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+
+                    sharedPrefs.edit().remove("session_expiry").apply() 
+
+                    userRepository.syncUser(user.uid)
+                    vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid)
+
+                    _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "Error en Google Sign-In.")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, generalError = e.message)
+            }
+        }
+    }
+
+    fun signInWithFacebook(accessToken: com.facebook.AccessToken) {
+        viewModelScope.launch {
+            userRepository.clearLocalUser()
+            vehicleRepository.clearLocalVehicles()
+            serviceRepository.clearLocalServices()
+
+            _state.value = _state.value.copy(isLoading = true, generalError = null)
+            try {
+                val credential = com.google.firebase.auth.FacebookAuthProvider.getCredential(accessToken.token)
+                val authResult = auth.signInWithCredential(credential).await()
+                val user = authResult.user
+
+                if (user != null) {
+                    val name = user.displayName ?: "Usuario Facebook"
+                    val email = user.email ?: ""
+
+                    userRepository.guardarUsuario(user.uid, name, email)
+                    
+                    val sharedPrefs = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+                    sharedPrefs.edit().remove("session_expiry").apply()
+                    
+                    userRepository.syncUser(user.uid)
+                    vehicleRepository.syncVehicles(user.uid)
+                    serviceRepository.syncServices(user.uid)
+
+                    _state.value = _state.value.copy(isLoading = false, isRegistroSuccessful = true)
+                } else {
+                    _state.value = _state.value.copy(isLoading = false, generalError = "Error en Facebook Sign-In.")
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, generalError = e.message)

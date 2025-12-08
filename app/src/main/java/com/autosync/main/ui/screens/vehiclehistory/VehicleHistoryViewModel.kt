@@ -26,25 +26,39 @@ class VehicleHistoryViewModel @Inject constructor(
     private val _services = MutableStateFlow<List<Service>>(emptyList())
     val services = _services.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading = _isLoading.asStateFlow()
+
     init {
-        savedStateHandle.get<Int>("vehicleId")?.let {
-            if (it != -1) {
-                loadVehicle(it)
-                loadServices(it)
+        val vehicleId = savedStateHandle.get<Int>("vehicleId")
+        
+        if (vehicleId != null && vehicleId != -1) {
+            loadVehicleAndServices(vehicleId)
+        } else {
+            _isLoading.value = false
+        }
+    }
+
+    private fun loadVehicleAndServices(id: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val vehicleData = vehicleRepository.getVehicleById(id)
+                _vehicle.value = vehicleData
+            } catch (e: Exception) {
+                _vehicle.value = null
+            } finally {
+                _isLoading.value = false
             }
         }
-    }
 
-    private fun loadVehicle(id: Int) {
         viewModelScope.launch {
-            _vehicle.value = vehicleRepository.getVehicleById(id)
-        }
-    }
-
-    private fun loadServices(vehicleId: Int) {
-        viewModelScope.launch {
-            serviceRepository.getServicesForVehicle(vehicleId).collect {
-                _services.value = it
+            try {
+                serviceRepository.getServicesForVehicle(id).collect {
+                    _services.value = it
+                }
+            } catch (e: Exception) {
+                _services.value = emptyList()
             }
         }
     }

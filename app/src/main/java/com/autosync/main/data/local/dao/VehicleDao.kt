@@ -13,13 +13,22 @@ import kotlinx.coroutines.flow.Flow
 interface VehicleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertVehicle(vehicle: Vehicle)
+    suspend fun insertVehicle(vehicle: Vehicle): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertVehicles(vehicles: List<Vehicle>)
 
     @Update
     suspend fun updateVehicle(vehicle: Vehicle)
 
     @Delete
     suspend fun deleteVehicle(vehicle: Vehicle)
+
+    @Query("DELETE FROM vehicles WHERE userId = :userId")
+    suspend fun deleteUserVehicles(userId: String)
+
+    @Query("DELETE FROM vehicles")
+    suspend fun clearAllVehicles()
 
     @Query("SELECT * FROM vehicles")
     fun getVehicles(): Flow<List<Vehicle>>

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,31 +36,37 @@ class ServiciosViewModel @Inject constructor(
     }
 
     private fun loadData() {
-        viewModelScope.launch {
-            // Asumimos que quieres ver todos los servicios de todos los vehículos
-            // Esto tendrá que cambiar cuando implementemos la lógica de "servicio por vehículo"
-            // pero por ahora, para que compile, lo hacemos así.
-            // Si no hay un método getAllServices en el repo, lo añadimos.
-
-            // Este enfoque es incorrecto, lo correcto es obtener los servicios por vehículo.
-            // Por ahora, para que compile, dejaremos la lista de servicios vacía.
-            // La lógica real se implementará en la pantalla de historial de cada vehículo.
-            vehicleRepository.getVehicles().collect { vehicles ->
-                _state.value = _state.value.copy(
-                    vehicles = vehicles,
-                    services = emptyList(), // Dejamos esto vacío por ahora para que compile
-                    isLoading = false
-                )
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            viewModelScope.launch {
+                try {
+                    serviceRepository.syncServices(userId)
+                } catch (e: Exception) {
+                }
             }
+
+            viewModelScope.launch {
+                combine(
+                    vehicleRepository.getVehicles(),
+                    serviceRepository.getServicesForUser(userId)
+                ) { vehicles, services ->
+                    ServiciosState(
+                        vehicles = vehicles,
+                        services = services,
+                        isLoading = false
+                    )
+                }.collect { newState ->
+                    _state.value = newState
+                }
+            }
+        } else {
+            _state.value = _state.value.copy(isLoading = false)
         }
     }
-
-    // La lógica de borrado necesitará ser repensada, 
-    // pero por ahora la comentamos para que no de errores de compilación.
     /*
     fun deleteServicio(service: Service) {
         viewModelScope.launch {
-            serviceRepository.deleteService(service) // Suponiendo que exista un método deleteService
+            serviceRepository.deleteService(service)
         }
     }
     */

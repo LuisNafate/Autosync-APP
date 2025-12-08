@@ -1,4 +1,48 @@
-package com.autosync.main.ui.theme.screens.facturas
+package com.autosync.main.ui.screens.facturas
 
-class FacturasViewModel {
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.autosync.main.data.local.model.Service
+import com.autosync.main.data.local.model.Vehicle
+import com.autosync.main.data.repository.ServiceRepository
+import com.autosync.main.data.repository.VehicleRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import javax.inject.Inject
+
+@HiltViewModel
+class FacturasViewModel @Inject constructor(
+    private val serviceRepository: ServiceRepository,
+    private val vehicleRepository: VehicleRepository,
+    private val userRepository: com.autosync.main.data.repository.UserRepository
+) : ViewModel() {
+
+    fun getServiceById(serviceId: Int): Flow<Service?> {
+        return serviceRepository.getServiceById(serviceId)
+    }
+
+    fun getVehicleForService(serviceId: Int): Flow<Vehicle?> {
+        return serviceRepository.getServiceById(serviceId).map { service ->
+            service?.let {
+                vehicleRepository.getVehicleById(it.vehicleId)
+            }
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun getUserForServiceFlow(serviceId: Int): Flow<com.autosync.main.data.local.UserEntity?> {
+        return serviceRepository.getServiceById(serviceId).flatMapLatest { service ->
+            if (service != null && service.userId.isNotEmpty()) {
+                userRepository.obtenerUsuario(service.userId)
+            } else {
+                kotlinx.coroutines.flow.flowOf(null)
+            }
+        }
+    }
 }

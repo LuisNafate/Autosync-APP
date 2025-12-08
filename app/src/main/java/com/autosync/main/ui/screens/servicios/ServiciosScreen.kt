@@ -120,7 +120,7 @@ fun ServiciosScreen(
                         ServicioCard(
                             service = service,
                             vehicleName = vehicle?.let { "${it.make} ${it.model}" } ?: "Vehículo desconocido",
-                            onDeleteClick = { /* Lógica de borrado comentada */ }
+                            onDeleteClick = {  }
                         )
                     }
                 }
@@ -159,11 +159,11 @@ fun ServicioCard(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(Color.DarkGray), // Color genérico
+                            .background(Color.DarkGray),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.Build, // Icono genérico
+                            Icons.Default.Build,
                             contentDescription = null,
                             tint = Color.White
                         )
@@ -217,10 +217,10 @@ fun ServicioCard(
                 }
             }
 
-            if (service.description.isNotBlank()) {
+            if (!service.details.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    service.description,
+                    service.details,
                     fontSize = 14.sp,
                     color = Color.Gray,
                     lineHeight = 18.sp
@@ -247,5 +247,3 @@ fun InfoItem(icon: ImageVector, text: String) {
         )
     }
 }
-
-// Este comentario es para forzar al compilador a que re-evalúe el archivo.

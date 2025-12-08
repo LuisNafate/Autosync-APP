@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.autosync.main.ui.components.CustomTextField
 import java.text.SimpleDateFormat
@@ -28,9 +30,23 @@ fun RegistrarServicioScreen(
     val state by viewModel.state.collectAsState()
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var showNextDatePicker by remember { mutableStateOf(false) }
     var isServicioDropdownExpanded by remember { mutableStateOf(false) }
     var isCategoriaDropdownExpanded by remember { mutableStateOf(false) }
     var isVehicleDropdownExpanded by remember { mutableStateOf(false) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        viewModel.onReceiptImageSelected(uri)
+    }
+
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onNavigateBack()
+        }
+    }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
@@ -50,6 +66,32 @@ fun RegistrarServicioScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showNextDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = state.nextServiceDate ?: System.currentTimeMillis()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showNextDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        viewModel.onNextServiceDateChange(it)
+                    }
+                    showNextDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNextDatePicker = false }) {
                     Text("Cancelar")
                 }
             }
@@ -216,6 +258,25 @@ fun RegistrarServicioScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
+            Text("Próximo Servicio", color = Color.White, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+            CustomTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showNextDatePicker = true },
+                value = state.nextServiceDate?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it)) } ?: "",
+                onValueChange = {},
+                label = "",
+                placeholder = "DD/MM/AAAA",
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showNextDatePicker = true }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha próximo servicio")
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text("Costo (opcional)", color = Color.White, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
             CustomTextField(
@@ -246,6 +307,7 @@ fun RegistrarServicioScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
 
+
             if (state.errorMessage != null) {
                 Text(
                     state.errorMessage ?: "",
@@ -254,11 +316,75 @@ fun RegistrarServicioScreen(
                 )
             }
 
+            Text("Comprobante / Recibo", color = Color.White, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val bitmap = remember(state.receiptImageUri) {
+                state.receiptImageUri?.let { uri ->
+                    try {
+                        if (android.os.Build.VERSION.SDK_INT < 28) {
+                            android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                        } else {
+                            val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                            android.graphics.ImageDecoder.decodeBitmap(source)
+                        }
+                    } catch (e: Exception) { null }
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clickable { launcher.launch("image/*") },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    if (bitmap != null) {
+                        androidx.compose.foundation.Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Recibo seleccionado",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f)),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Cambiar imagen",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    } else {
+                        Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = "Agregar imagen",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Toca para agregar imagen de recibo", color = Color.Gray)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
                     viewModel.registrarServicio()
-                    onNavigateBack()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state.isValid && !state.isLoading,

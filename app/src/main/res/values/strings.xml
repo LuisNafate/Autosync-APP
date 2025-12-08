@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">AutoSync</string>
+    <string name="facebook_app_id">2085918778828061</string>
+    <string name="fb_login_protocol_scheme">fb2085918778828061</string>
+    <string name="facebook_client_token">8963b4688a40de121493b8153e07781c</string>
 </resources>

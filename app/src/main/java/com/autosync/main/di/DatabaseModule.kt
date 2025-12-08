@@ -2,9 +2,9 @@ package com.autosync.main.di
 
 import android.content.Context
 import androidx.room.Room
-import com.autosync.main.data.local.AppDatabase
+import com.autosync.main.data.local.UserDatabase
+import com.autosync.main.data.local.UserDao
 import com.autosync.main.data.local.dao.ServiceDao
-import com.autosync.main.data.local.dao.ServicioDao
 import com.autosync.main.data.local.dao.VehicleDao
 import dagger.Module
 import dagger.Provides
@@ -19,21 +19,26 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+    fun provideUserDatabase(@ApplicationContext context: Context): UserDatabase {
         return Room.databaseBuilder(
             context,
-            AppDatabase::class.java,
-            "autosync_database"
+            UserDatabase::class.java,
+            "user_database"
         ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
-    fun provideVehicleDao(appDatabase: AppDatabase): VehicleDao {
-        return appDatabase.vehicleDao()
+    fun provideUserDao(database: UserDatabase): UserDao {
+        return database.userDao()
     }
 
     @Provides
-    fun provideServiceDao(appDatabase: AppDatabase): ServiceDao {
-        return appDatabase.serviceDao()
+    fun provideVehicleDao(database: UserDatabase): VehicleDao {
+        return database.vehicleDao()
+    }
+
+    @Provides
+    fun provideServiceDao(database: UserDatabase): ServiceDao {
+        return database.serviceDao()
     }
 }

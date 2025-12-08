@@ -19,11 +19,13 @@ data class RegistrarServicioState(
     val selectedVehicleId: Int? = null,
     val selectedVehicleName: String? = null,
     val tipoServicio: String = "",
-    val otroServicio: String = "", // ¡Añadido!
+    val otroServicio: String = "",
     val taller: String = "",
     val fecha: Long = System.currentTimeMillis(),
+    val nextServiceDate: Long? = null,
     val costo: String = "",
     val descripcion: String = "",
+    val receiptImageUri: android.net.Uri? = null,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
@@ -78,8 +80,16 @@ class RegistrarServicioViewModel @Inject constructor(
         )
     }
 
-    fun onOtroServicioChange(value: String) { // ¡Añadido!
+    fun onOtroServicioChange(value: String) {
         _state.value = _state.value.copy(otroServicio = value)
+    }
+
+    fun onReceiptImageSelected(uri: android.net.Uri?) {
+        _state.value = _state.value.copy(receiptImageUri = uri)
+    }
+
+    fun onNextServiceDateChange(date: Long?) {
+         _state.value = _state.value.copy(nextServiceDate = date)
     }
 
     fun onTallerChange(taller: String) {
@@ -109,22 +119,22 @@ class RegistrarServicioViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
 
             try {
-                val tipoFinal = if (_state.value.tipoServicio == "Otro") { // ¡Corregido!
-                    _state.value.otroServicio
-                } else {
-                    _state.value.tipoServicio
-                }
+                val selectedVehicle = _state.value.vehicles.find { it.id == _state.value.selectedVehicleId }
+                val userId = selectedVehicle?.userId ?: ""
 
                 val service = Service(
                     vehicleId = _state.value.selectedVehicleId!!,
-                    serviceType = tipoFinal,
+                    userId = userId,
+                    serviceType = _state.value.tipoServicio,
+                    customService = if (_state.value.tipoServicio == "Otro") _state.value.otroServicio else null,
                     workshop = _state.value.taller,
                     date = Date(_state.value.fecha),
-                    description = _state.value.descripcion,
+                    nextServiceDate = _state.value.nextServiceDate?.let { Date(it) },
+                    details = _state.value.descripcion,
                     cost = _state.value.costo.toDoubleOrNull()
                 )
 
-                serviceRepository.insertService(service)
+                serviceRepository.insertService(service, _state.value.receiptImageUri)
                 _state.value = _state.value.copy(isLoading = false, isSuccess = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
