@@ -38,6 +38,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,6 +64,7 @@ fun VehicleHistoryScreen(
     val vehicle by viewModel.vehicle.collectAsState()
     val services by viewModel.services.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    var showVehicleDetailsDialog by remember { mutableStateOf(false) }
     
     val backgroundColor = Color(0xFF101C22)
     val accentColor = Color(0xFF10374A)
@@ -134,7 +138,10 @@ fun VehicleHistoryScreen(
                             .padding(20.dp)
                     ) {
                         // Card de información del vehículo mejorada
-                        VehicleInfoCardImproved(vehicle!!)
+                        VehicleInfoCardImproved(
+                            vehicle = vehicle!!,
+                            onViewDetails = { showVehicleDetailsDialog = true }
+                        )
                         
                         Spacer(modifier = Modifier.height(24.dp))
                         
@@ -209,10 +216,63 @@ fun VehicleHistoryScreen(
             }
         }
     }
+
+    if (showVehicleDetailsDialog && vehicle != null) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showVehicleDetailsDialog = false }) {
+             Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        "Detalles del Vehículo",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.White
+                    )
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DetailRow("Marca", vehicle!!.make)
+                        DetailRow("Modelo", vehicle!!.model)
+                        DetailRow("Año", vehicle!!.year.toString())
+                        DetailRow("Placas", vehicle!!.licensePlate)
+                    }
+                    
+                    Button(
+                        onClick = { showVehicleDetailsDialog = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                    ) {
+                        Text("Cerrar")
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
-fun VehicleInfoCardImproved(vehicle: Vehicle) {
+fun DetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, color = Color.Gray, fontSize = 16.sp)
+        Text(text = value, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+    }
+}
+
+@Composable
+fun VehicleInfoCardImproved(
+    vehicle: Vehicle,
+    onViewDetails: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
@@ -261,7 +321,7 @@ fun VehicleInfoCardImproved(vehicle: Vehicle) {
             }
             
             TextButton(
-                onClick = { /* TODO: Navigate to vehicle details */ },
+                onClick = onViewDetails,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(

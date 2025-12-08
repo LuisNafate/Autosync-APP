@@ -124,9 +124,22 @@ fun AppNavigation() {
                 VehicleHistoryScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToAddService = { vehicleId ->
-                        // Redirigir a la pantalla de registrar servicio general
                         navController.navigate("registrar_servicio")
+                    },
+                    onNavigateToInvoiceDetail = { serviceId ->
+                        navController.navigate("detalle_factura/$serviceId")
                     }
+                )
+            }
+            
+            composable(
+                route = "detalle_factura/{serviceId}",
+                arguments = listOf(navArgument("serviceId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val serviceId = backStackEntry.arguments?.getInt("serviceId") ?: -1
+                com.autosync.main.ui.screens.facturas.DetalleFacturaScreen(
+                    serviceId = serviceId,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

@@ -12,13 +12,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 @HiltViewModel
 class FacturasViewModel @Inject constructor(
     private val serviceRepository: ServiceRepository,
-    private val vehicleRepository: VehicleRepository
+    private val vehicleRepository: VehicleRepository,
+    private val userRepository: com.autosync.main.data.repository.UserRepository
 ) : ViewModel() {
 
     fun getServiceById(serviceId: Int): Flow<Service?> {
@@ -29,6 +31,17 @@ class FacturasViewModel @Inject constructor(
         return serviceRepository.getServiceById(serviceId).map { service ->
             service?.let {
                 vehicleRepository.getVehicleById(it.vehicleId)
+            }
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun getUserForServiceFlow(serviceId: Int): Flow<com.autosync.main.data.local.UserEntity?> {
+        return serviceRepository.getServiceById(serviceId).flatMapLatest { service ->
+            if (service != null && service.userId.isNotEmpty()) {
+                userRepository.obtenerUsuario(service.userId)
+            } else {
+                kotlinx.coroutines.flow.flowOf(null)
             }
         }
     }

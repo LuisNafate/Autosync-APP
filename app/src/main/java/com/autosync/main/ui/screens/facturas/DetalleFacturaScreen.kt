@@ -43,6 +43,7 @@ fun DetalleFacturaScreen(
 ) {
     val service by viewModel.getServiceById(serviceId).collectAsState(initial = null)
     val vehicle by viewModel.getVehicleForService(serviceId).collectAsState(initial = null)
+    val user by viewModel.getUserForServiceFlow(serviceId).collectAsState(initial = null)
     
     val backgroundColor = Color(0xFF101C22)
     val cardColor = Color(0xFF1F2937)
@@ -121,12 +122,12 @@ fun DetalleFacturaScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            "Nombre: GuzGuz",
+                            "Nombre: ${user?.nombre ?: "Cargando..."}",
                             fontSize = 14.sp,
                             color = Color(0xFF9CA3AF)
                         )
                         Text(
-                            "Email: guz@gmail.com",
+                            "Email: ${user?.email ?: ""}",
                             fontSize = 14.sp,
                             color = Color(0xFF9CA3AF)
                         )

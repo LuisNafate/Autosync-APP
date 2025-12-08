@@ -44,23 +44,22 @@ class VehicleHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Fetch vehicle and services concurrently for better performance
                 val vehicleData = vehicleRepository.getVehicleById(id)
                 _vehicle.value = vehicleData
-
-                if (vehicleData != null) {
-                    serviceRepository.getServicesForVehicle(id).collect {
-                        _services.value = it
-                    }
-                } else {
-                    _services.value = emptyList()
-                }
             } catch (e: Exception) {
-                // In case of any error, ensure the state is empty
                 _vehicle.value = null
-                _services.value = emptyList()
             } finally {
                 _isLoading.value = false
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                serviceRepository.getServicesForVehicle(id).collect {
+                    _services.value = it
+                }
+            } catch (e: Exception) {
+                _services.value = emptyList()
             }
         }
     }
