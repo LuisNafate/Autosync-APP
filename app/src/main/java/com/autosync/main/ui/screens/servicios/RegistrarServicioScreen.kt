@@ -24,10 +24,19 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrarServicioScreen(
+    serviceId: Int? = null,
     onNavigateBack: () -> Unit,
     viewModel: RegistrarServicioViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val isEditMode = serviceId != null
+
+    // Cargar datos del servicio si es modo edición
+    LaunchedEffect(serviceId) {
+        if (serviceId != null && serviceId > 0) {
+            viewModel.loadServiceForEdit(serviceId)
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showNextDatePicker by remember { mutableStateOf(false) }
@@ -103,7 +112,7 @@ fun RegistrarServicioScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Registrar servicio", fontWeight = FontWeight.Bold) },
+                title = { Text(if (isEditMode) "Editar servicio" else "Registrar servicio", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -319,16 +328,27 @@ fun RegistrarServicioScreen(
             Text("Comprobante / Recibo", color = Color.White, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
 
-            val bitmap = remember(state.receiptImageUri) {
-                state.receiptImageUri?.let { uri ->
-                    try {
-                        if (android.os.Build.VERSION.SDK_INT < 28) {
-                            android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-                        } else {
-                            val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
-                            android.graphics.ImageDecoder.decodeBitmap(source)
-                        }
-                    } catch (e: Exception) { null }
+            val bitmap = remember(state.receiptImageUri, state.existingReceiptImageUrl) {
+                when {
+                    state.receiptImageUri != null -> {
+                        // Nueva imagen seleccionada
+                        try {
+                            if (android.os.Build.VERSION.SDK_INT < 28) {
+                                android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, state.receiptImageUri)
+                            } else {
+                                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, state.receiptImageUri!!)
+                                android.graphics.ImageDecoder.decodeBitmap(source)
+                            }
+                        } catch (e: Exception) { null }
+                    }
+                    !state.existingReceiptImageUrl.isNullOrBlank() -> {
+                        // Imagen existente del servicio
+                        try {
+                            val decodedString = android.util.Base64.decode(state.existingReceiptImageUrl, android.util.Base64.DEFAULT)
+                            android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+                        } catch (e: Exception) { null }
+                    }
+                    else -> null
                 }
             }
 
@@ -398,7 +418,7 @@ fun RegistrarServicioScreen(
                 } else {
                     Icon(Icons.Default.CheckCircle, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Registrar servicio", color = Color.White)
+                    Text(if (isEditMode) "Actualizar servicio" else "Registrar servicio", color = Color.White)
                 }
             }
         }

@@ -63,11 +63,14 @@ class ServiciosViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = false)
         }
     }
-    /*
-    fun deleteServicio(service: Service) {
+
+    fun deleteService(service: Service) {
         viewModelScope.launch {
-            serviceRepository.deleteService(service)
+            try {
+                serviceRepository.deleteService(service)
+            } catch (e: Exception) {
+                // Manejar error si es necesario
+            }
         }
     }
-    */
 }

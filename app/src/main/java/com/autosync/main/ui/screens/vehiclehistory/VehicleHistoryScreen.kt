@@ -20,8 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -65,9 +67,26 @@ fun VehicleHistoryScreen(
     val services by viewModel.services.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     var showVehicleDetailsDialog by remember { mutableStateOf(false) }
+    var serviceToDelete by remember { mutableStateOf<Service?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     
     val backgroundColor = Color(0xFF101C22)
     val accentColor = Color(0xFF10374A)
+
+    if (showDeleteDialog && serviceToDelete != null) {
+        DeleteServiceDialog(
+            serviceName = serviceToDelete!!.serviceType,
+            onConfirm = {
+                viewModel.deleteService(serviceToDelete!!)
+                showDeleteDialog = false
+                serviceToDelete = null
+            },
+            onDismiss = {
+                showDeleteDialog = false
+                serviceToDelete = null
+            }
+        )
+    }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -182,7 +201,11 @@ fun VehicleHistoryScreen(
                             items(services) { service ->
                                 ServiceCardImproved(
                                     service = service,
-                                    onViewInvoice = { onNavigateToInvoiceDetail(service.id) }
+                                    onViewInvoice = { onNavigateToInvoiceDetail(service.id) },
+                                    onDeleteClick = {
+                                        serviceToDelete = service
+                                        showDeleteDialog = true
+                                    }
                                 )
                             }
                         }
@@ -337,7 +360,8 @@ fun VehicleInfoCardImproved(
 @Composable
 fun ServiceCardImproved(
     service: Service,
-    onViewInvoice: () -> Unit
+    onViewInvoice: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(service.date)
     val serviceIcon = if (service.serviceType.contains("aceite", ignoreCase = true)) {
@@ -417,6 +441,14 @@ fun ServiceCardImproved(
                         }
                     }
                 }
+                
+                IconButton(onClick = onDeleteClick) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Eliminar servicio",
+                        tint = Color.Gray
+                    )
+                }
             }
             
             TextButton(
@@ -490,4 +522,42 @@ fun ServiceListItem(service: Service) {
             }
         }
     }
+}
+
+@Composable
+fun DeleteServiceDialog(
+    serviceName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Confirmar eliminación",
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        },
+        text = {
+            Text(
+                "¿Estás seguro de que deseas eliminar el servicio \"$serviceName\"? Esta acción no se puede deshacer.",
+                color = Color.White
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Eliminar", color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = Color(0xFF3B82F6))
+            }
+        },
+        containerColor = Color(0xFF1F2937)
+    )
 }

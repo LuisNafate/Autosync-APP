@@ -163,6 +163,12 @@ fun AppNavigation(
                     onNavigateToAddVehicle = {
                         navController.navigate("vehicle_details")
                     },
+                    onNavigateToInvoiceDetail = { serviceId ->
+                        navController.navigate("detalle_factura/$serviceId")
+                    },
+                    onNavigateToVehicleHistory = { vehicleId ->
+                        navController.navigate("vehicle_history/$vehicleId")
+                    },
                     onLogout = {
                         scope.launch {
                             try {
@@ -242,7 +248,10 @@ fun AppNavigation(
                 val serviceId = backStackEntry.arguments?.getInt("serviceId") ?: -1
                 com.autosync.main.ui.screens.facturas.DetalleFacturaScreen(
                     serviceId = serviceId,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToEdit = { serviceId ->
+                        navController.navigate("editar_servicio/$serviceId")
+                    }
                 )
             }
 
@@ -250,11 +259,24 @@ fun AppNavigation(
                 ServiciosScreen(
                     onNavigateToRegistrarServicio = {
                         navController.navigate("registrar_servicio")
+                    },
+                    onNavigateToInvoiceDetail = { serviceId ->
+                        navController.navigate("detalle_factura/$serviceId")
                     }
                 )
             }
             composable("registrar_servicio") {
                 RegistrarServicioScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = "editar_servicio/{serviceId}",
+                arguments = listOf(navArgument("serviceId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val serviceId = backStackEntry.arguments?.getInt("serviceId") ?: -1
+                RegistrarServicioScreen(
+                    serviceId = serviceId,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

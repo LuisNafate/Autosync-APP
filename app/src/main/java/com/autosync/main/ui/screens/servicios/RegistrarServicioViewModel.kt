@@ -26,6 +26,8 @@ data class RegistrarServicioState(
     val costo: String = "",
     val descripcion: String = "",
     val receiptImageUri: android.net.Uri? = null,
+    val existingReceiptImageUrl: String? = null,
+    val serviceId: Int? = null,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
@@ -62,6 +64,35 @@ class RegistrarServicioViewModel @Inject constructor(
         viewModelScope.launch {
             vehicleRepository.getVehicles().collect { vehicles ->
                 _state.value = _state.value.copy(vehicles = vehicles)
+            }
+        }
+    }
+
+    fun loadServiceForEdit(serviceId: Int) {
+        viewModelScope.launch {
+            try {
+                serviceRepository.getServiceById(serviceId).collect { service ->
+                    service?.let {
+                        val vehicle = _state.value.vehicles.find { v -> v.id == it.vehicleId }
+                        _state.value = _state.value.copy(
+                            serviceId = it.id,
+                            selectedVehicleId = it.vehicleId,
+                            selectedVehicleName = vehicle?.let { v -> "${v.make} ${v.model} - ${v.licensePlate}" },
+                            tipoServicio = it.customService ?: it.serviceType,
+                            otroServicio = if (it.customService != null) it.customService else "",
+                            taller = it.workshop,
+                            fecha = it.date.time,
+                            nextServiceDate = it.nextServiceDate?.time,
+                            costo = it.cost?.toString() ?: "",
+                            descripcion = it.details ?: "",
+                            existingReceiptImageUrl = it.receiptImageUrl
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    errorMessage = "Error al cargar el servicio: ${e.message}"
+                )
             }
         }
     }
@@ -122,19 +153,48 @@ class RegistrarServicioViewModel @Inject constructor(
                 val selectedVehicle = _state.value.vehicles.find { it.id == _state.value.selectedVehicleId }
                 val userId = selectedVehicle?.userId ?: ""
 
-                val service = Service(
-                    vehicleId = _state.value.selectedVehicleId!!,
-                    userId = userId,
-                    serviceType = _state.value.tipoServicio,
-                    customService = if (_state.value.tipoServicio == "Otro") _state.value.otroServicio else null,
-                    workshop = _state.value.taller,
-                    date = Date(_state.value.fecha),
-                    nextServiceDate = _state.value.nextServiceDate?.let { Date(it) },
-                    details = _state.value.descripcion,
-                    cost = _state.value.costo.toDoubleOrNull()
-                )
+                val isEditMode = _state.value.serviceId != null
+                
+                if (isEditMode) {
+                    // Modo edición - actualizar servicio existente
+                    val service = Service(
+                        id = _state.value.serviceId!!,
+                        vehicleId = _state.value.selectedVehicleId!!,
+                        userId = userId,
+                        serviceType = _state.value.tipoServicio,
+                        customService = if (_state.value.tipoServicio == "Otro") _state.value.otroServicio else null,
+                        workshop = _state.value.taller,
+                        date = Date(_state.value.fecha),
+                        nextServiceDate = _state.value.nextServiceDate?.let { Date(it) },
+                        details = _state.value.descripcion,
+                        cost = _state.value.costo.toDoubleOrNull(),
+                        receiptImageUrl = if (_state.value.receiptImageUri != null) null else _state.value.existingReceiptImageUrl
+                    )
+                    
+                    if (_state.value.receiptImageUri != null) {
+                        // Si hay nueva imagen, insertamos con la nueva imagen
+                        serviceRepository.insertService(service, _state.value.receiptImageUri)
+                    } else {
+                        // Si no hay nueva imagen, solo actualizamos
+                        serviceRepository.updateService(service)
+                    }
+                } else {
+                    // Modo registro - insertar nuevo servicio
+                    val service = Service(
+                        vehicleId = _state.value.selectedVehicleId!!,
+                        userId = userId,
+                        serviceType = _state.value.tipoServicio,
+                        customService = if (_state.value.tipoServicio == "Otro") _state.value.otroServicio else null,
+                        workshop = _state.value.taller,
+                        date = Date(_state.value.fecha),
+                        nextServiceDate = _state.value.nextServiceDate?.let { Date(it) },
+                        details = _state.value.descripcion,
+                        cost = _state.value.costo.toDoubleOrNull()
+                    )
 
-                serviceRepository.insertService(service, _state.value.receiptImageUri)
+                    serviceRepository.insertService(service, _state.value.receiptImageUri)
+                }
+                
                 _state.value = _state.value.copy(isLoading = false, isSuccess = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(

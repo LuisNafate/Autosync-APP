@@ -75,6 +75,8 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToAddVehicle: () -> Unit,
+    onNavigateToInvoiceDetail: (Int) -> Unit,
+    onNavigateToVehicleHistory: (Int) -> Unit,
     onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -164,7 +166,10 @@ fun HomeScreen(
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(state.vehicles) { vehicle ->
-                            VehicleCard(vehicle = vehicle)
+                            VehicleCard(
+                                vehicle = vehicle,
+                                onNavigateToVehicleHistory = onNavigateToVehicleHistory
+                            )
                         }
                     }
                 }
@@ -192,7 +197,8 @@ fun HomeScreen(
                             val vehicle = state.vehicles.find { it.id == service.vehicleId }
                             HomeServicioCard(
                                 service = service,
-                                vehicleName = vehicle?.let { "${it.make} ${it.model}" } ?: "Vehículo desconocido"
+                                vehicleName = vehicle?.let { "${it.make} ${it.model}" } ?: "Vehículo desconocido",
+                                onNavigateToInvoiceDetail = onNavigateToInvoiceDetail
                             )
                         }
                     }
@@ -444,11 +450,16 @@ fun NotificationItem(
 
 
 @Composable
-fun VehicleCard(vehicle: Vehicle) {
+fun VehicleCard(
+    vehicle: Vehicle,
+    onNavigateToVehicleHistory: (Int) -> Unit
+) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
-            modifier = Modifier.width(180.dp)
+            modifier = Modifier
+                .width(180.dp)
+                .clickable { onNavigateToVehicleHistory(vehicle.id) }
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Icon(
@@ -474,13 +485,16 @@ fun VehicleCard(vehicle: Vehicle) {
 @Composable
 fun HomeServicioCard(
     service: Service,
-    vehicleName: String
+    vehicleName: String,
+    onNavigateToInvoiceDetail: (Int) -> Unit
 ) {
         val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         val currencyFormat = NumberFormat.getCurrencyInstance(Locale("es", "MX"))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToInvoiceDetail(service.id) },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937))
         ) {

@@ -62,4 +62,14 @@ class VehicleHistoryViewModel @Inject constructor(
             }
         }
     }
+
+    fun deleteService(service: Service) {
+        viewModelScope.launch {
+            try {
+                serviceRepository.deleteService(service)
+            } catch (e: Exception) {
+                // Manejar error si es necesario
+            }
+        }
+    }
 }

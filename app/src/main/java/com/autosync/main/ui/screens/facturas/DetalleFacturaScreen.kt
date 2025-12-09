@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material3.*
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 fun DetalleFacturaScreen(
     serviceId: Int,
     onNavigateBack: () -> Unit,
+    onNavigateToEdit: (Int) -> Unit,
     viewModel: FacturasViewModel = hiltViewModel()
 ) {
     val service by viewModel.getServiceById(serviceId).collectAsState(initial = null)
@@ -66,6 +68,15 @@ fun DetalleFacturaScreen(
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Volver",
+                            tint = Color.White
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onNavigateToEdit(serviceId) }) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar servicio",
                             tint = Color.White
                         )
                     }
